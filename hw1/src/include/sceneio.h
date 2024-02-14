@@ -1,10 +1,10 @@
 #pragma once
-#include <string>
+#include <iostream>
 #include "scene.h"
 
 namespace sceneio {
 
-void renderScene(const Scene &scene, const std::string &filename);
-Scene loadScene(const std::string &filename);
+void renderScene(const Scene &scene, std::ostream &out);
+Scene loadScene(std::istream &in);
 
 }

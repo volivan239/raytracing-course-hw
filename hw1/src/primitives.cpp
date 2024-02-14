@@ -1,6 +1,5 @@
 #include "primitives.h"
 #include <math.h>
-#include <iostream>
 
 Ray::Ray() {}
 Ray::Ray(Point o, Point d): o(o), d(d) {}

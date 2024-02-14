@@ -5,10 +5,10 @@
 
 namespace sceneio {
 
-std::pair<std::unique_ptr<Figure>, std::optional<std::string>> loadPrimitive(std::ifstream &fin) {
+std::pair<std::unique_ptr<Figure>, std::optional<std::string>> loadPrimitive(std::istream &in) {
     std::string cmdLine;
 
-    getline(fin, cmdLine);
+    getline(in, cmdLine);
     std::unique_ptr<Figure> figure;
     std::stringstream ss;
     ss << cmdLine;
@@ -32,7 +32,7 @@ std::pair<std::unique_ptr<Figure>, std::optional<std::string>> loadPrimitive(std
         return std::make_pair(nullptr, cmdLine);
     }
 
-    while (getline(fin, cmdLine)) {
+    while (getline(in, cmdLine)) {
         std::string cmd;
 
         std::stringstream ss;
@@ -51,12 +51,11 @@ std::pair<std::unique_ptr<Figure>, std::optional<std::string>> loadPrimitive(std
     return std::make_pair(std::move(figure), std::nullopt);
 }
 
-Scene loadScene(const std::string &filename) {
-    std::ifstream fin(filename);
+Scene loadScene(std::istream &in) {
     Scene scene;
 
     std::string cmdLine;
-    while (getline(fin, cmdLine)) {
+    while (getline(in, cmdLine)) {
         while (true) {
             std::stringstream ss;
             ss << cmdLine;
@@ -78,7 +77,7 @@ Scene loadScene(const std::string &filename) {
             } else if (cmd == "CAMERA_FOV_X") {
                 ss >> scene.cameraFovX;
             } else if (cmd == "NEW_PRIMITIVE") {
-                auto [figure, nextCmd] = loadPrimitive(fin);
+                auto [figure, nextCmd] = loadPrimitive(in);
                 if (figure != nullptr) {
                     scene.figures.push_back(std::move(figure));
                 }
@@ -97,18 +96,16 @@ Scene loadScene(const std::string &filename) {
     return scene;
 }
 
-void renderScene(const Scene &scene, const std::string &filename) {
-    std::ofstream fout(filename);
-    fout << "P6\n";
-    fout << scene.width << ' ' << scene.height << '\n';
-    fout << 255 << '\n';
+void renderScene(const Scene &scene, std::ostream &out) {
+    out << "P6\n";
+    out << scene.width << ' ' << scene.height << '\n';
+    out << 255 << '\n';
     for (int y = 0; y < scene.height; y++) {
         for (int x = 0; x < scene.width; x++) {
             uint8_t *pixel = scene.getPixel(x, y).toExternFormat();
-            fout.write((char *) pixel, 3);
+            out.write((char *) pixel, 3);
         }
     }
-    fout.close();
 }
 
 }
