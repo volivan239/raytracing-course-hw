@@ -1,4 +1,4 @@
-#include "figures.h"
+#include "primitives.h"
 #include <math.h>
 #include <iostream>
 

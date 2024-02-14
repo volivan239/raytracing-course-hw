@@ -1,7 +1,7 @@
 #pragma once
 #include "point.h"
 #include "color.h"
-#include "figures.h"
+#include "primitives.h"
 #include <string>
 #include <vector>
 #include <memory>
@@ -9,7 +9,7 @@
 class Scene {
 private:
     Ray getCameraRay(int x, int y) const;
-    
+
 public:
     int width, height;
     Color bgColor;
