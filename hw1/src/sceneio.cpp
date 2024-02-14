@@ -46,6 +46,10 @@ Scene loadScene(const std::string &filename) {
                 Point n;
                 ss >> n;
                 figure = std::unique_ptr<Figure>(new Plane(n));
+            } else if (figureName == "BOX") {
+                Point s;
+                ss >> s;
+                figure = std::unique_ptr<Figure>(new Box(s));
             } else {
                 std::cerr << "UNKNWOWN FIGURE: " << figureName << '@' << cmdLine << std::endl;
                 continue;
@@ -68,7 +72,9 @@ Scene loadScene(const std::string &filename) {
             }
             scene.figures.push_back(std::move(figure));
         } else {
-            std::cerr << "UNKNOWN COMMAND: " << cmd << std::endl;
+            if (cmd != "") {
+                std::cerr << "UNKNOWN COMMAND: " << cmd << std::endl;
+            }
         }
     }
     return scene;

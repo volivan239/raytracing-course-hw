@@ -51,3 +51,14 @@ public:
     Plane();
     Plane(Point n);
 };
+
+class Box : public Figure {
+private:
+    std::optional<float> rawIntersect(const Ray &ray) const override;
+
+public:
+    Point s;
+
+    Box();
+    Box(Point s);
+};
