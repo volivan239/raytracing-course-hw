@@ -1,5 +1,6 @@
 #include "color.h"
 #include <cassert>
+#include <math.h>
 
 Color::Color() {}
 
@@ -11,9 +12,9 @@ Color::Color(float r, float g, float b): r(r), g(g), b(b) {
 
 uint8_t* Color::toExternFormat() const {
     uint8_t *ans = new uint8_t[3];
-    ans[0] = 255 * r;
-    ans[1] = 255 * g;
-    ans[2] = 255 * b;
+    ans[0] = round(255 * r);
+    ans[1] = round(255 * g);
+    ans[2] = round(255 * b);
     return ans;
 }
 
