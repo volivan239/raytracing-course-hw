@@ -17,9 +17,14 @@ public:
     Ray rotate(const Quaternion &rotation) const;
 };
 
+struct Intersection {
+    float t;
+    Vec3 norma;
+    bool is_inside;    
+};
+
 class Figure {
-private:
-    virtual std::optional<float> rawIntersect(const Ray &ray) const = 0;
+    virtual std::optional<Intersection> rawIntersect(const Ray &ray) const = 0;
 
 public:
     Vec3 position = {0, 0, 0};
@@ -29,12 +34,12 @@ public:
 
     Figure();
 
-    std::optional<std::pair<float, Color>> intersect(const Ray &ray);
+    std::optional<Intersection> intersect(const Ray &ray) const;
 };
 
 class Ellipsoid : public Figure {
 private:
-    std::optional<float> rawIntersect(const Ray &ray) const override;
+    virtual std::optional<Intersection> rawIntersect(const Ray &ray) const override;
 
 public:
     Vec3 r;
@@ -45,7 +50,7 @@ public:
 
 class Plane : public Figure {
 private:
-    std::optional<float> rawIntersect(const Ray &ray) const override;
+    virtual std::optional<Intersection> rawIntersect(const Ray &ray) const override;
 
 public:
     Vec3 n;
@@ -56,7 +61,7 @@ public:
 
 class Box : public Figure {
 private:
-    std::optional<float> rawIntersect(const Ray &ray) const override;
+    virtual std::optional<Intersection> rawIntersect(const Ray &ray) const override;
 
 public:
     Vec3 s;

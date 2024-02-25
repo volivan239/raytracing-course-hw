@@ -10,7 +10,13 @@ uint8_t* toExternColorFormat(const Color &color) {
     return ans;
 }
 
-Color saturate(const Color &color) {
+Color gamma_corrected(const Color &x) {
+    float gamma = 1. / 2.2;
+    return Color(pow(x.x, gamma), pow(x.y, gamma), pow(x.z, gamma));
+}
+
+
+static Color saturate(const Color &color) {
     float x = std::min(1.f, std::max(0.f, color.x));
     float y = std::min(1.f, std::max(0.f, color.y));
     float z = std::min(1.f, std::max(0.f, color.z));

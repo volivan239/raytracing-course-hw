@@ -15,6 +15,8 @@ public:
     Vec3 operator + (float v) const;
     float dot(const Vec3 &other) const;
     Vec3 cross(const Vec3 &other) const;
+
+    Vec3 normalize() const;
     float len() const;
     float len2() const;
 };

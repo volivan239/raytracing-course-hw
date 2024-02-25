@@ -55,6 +55,44 @@ std::pair<std::unique_ptr<Figure>, std::optional<std::string>> loadPrimitive(std
     return std::make_pair(std::move(figure), std::nullopt);
 }
 
+std::pair<std::unique_ptr<LightSource>, std::optional<std::string>> loadLightSource(std::istream &in) {    
+    Color intensity;
+    Vec3 direction;
+    Vec3 position;
+    Vec3 attenuation;
+    bool isDirected = false;
+
+    std::string cmdLine;
+    std::optional<std::string> nextCmdLine = std::nullopt;
+    while (getline(in, cmdLine)) {
+        std::string cmd;
+
+        std::stringstream ss;
+        ss << cmdLine;
+        ss >> cmd;
+        if (cmd == "LIGHT_INTENSITY") {
+            ss >> intensity;
+        } else if (cmd == "LIGHT_POSITION") {
+            ss >> position;
+        } else if (cmd == "LIGHT_DIRECTION") {
+            ss >> direction;
+            isDirected = true;
+        } else if (cmd == "LIGHT_ATTENUATION") {
+            ss >> attenuation;
+        } else {
+            nextCmdLine = cmdLine;
+            break;
+        }
+    }
+    std::unique_ptr<LightSource> lightSource;
+    if (isDirected) {
+        lightSource = std::unique_ptr<LightSource>(new DirectedLightSource(intensity, direction));
+    } else {
+        lightSource = std::unique_ptr<LightSource>(new DotLightSource(intensity, position, attenuation));
+    }
+    return std::make_pair(std::move(lightSource), nextCmdLine);
+}
+
 Scene loadScene(std::istream &in) {
     Scene scene;
 
@@ -82,9 +120,7 @@ Scene loadScene(std::istream &in) {
                 ss >> scene.cameraFovX;
             } else if (cmd == "NEW_PRIMITIVE") {
                 auto [figure, nextCmd] = loadPrimitive(in);
-                if (figure != nullptr) {
-                    scene.figures.push_back(std::move(figure));
-                }
+                scene.figures.push_back(std::move(figure));
                 if (nextCmd.has_value()) {
                     cmdLine = nextCmd.value();
                     continue;
@@ -93,6 +129,13 @@ Scene loadScene(std::istream &in) {
                 ss >> scene.rayDepth;
             } else if (cmd == "AMBIENT_LIGHT") {
                 ss >> scene.ambientLight;
+            } else if (cmd == "NEW_LIGHT") {
+                auto [lightSource, nextCmd] = loadLightSource(in);
+                scene.lightSources.push_back(std::move(lightSource));
+                if (nextCmd.has_value()) {
+                    cmdLine = nextCmd.value();
+                    continue;
+                }
             } else {
                 if (cmd != "") {
                     std::cerr << "UNKNOWN COMMAND: " << cmd << std::endl;
@@ -110,7 +153,9 @@ void renderScene(const Scene &scene, std::ostream &out) {
     out << 255 << '\n';
     for (int y = 0; y < scene.height; y++) {
         for (int x = 0; x < scene.width; x++) {
-            uint8_t *pixel = toExternColorFormat(scene.getPixel(x, y));
+            uint8_t *pixel = toExternColorFormat(
+                gamma_corrected(aces_tonemap(scene.getPixel(x, y)))
+            );
             out.write((char *) pixel, 3);
         }
     }

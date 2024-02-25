@@ -49,3 +49,7 @@ std::istream& operator >> (std::istream &in, Vec3 &point) {
 Vec3 operator * (float k, const Vec3 &p) {
     return {k * p.x, k * p.y, k * p.z};
 }
+
+Vec3 Vec3::normalize() const {
+    return 1. / len() * (*this);
+}
