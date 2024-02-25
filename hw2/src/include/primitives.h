@@ -31,6 +31,7 @@ public:
     Quaternion rotation = {0, 0, 0, 1};
     Material material = Material::DIFFUSE;
     Color color;
+    float ior;
 
     Figure();
 

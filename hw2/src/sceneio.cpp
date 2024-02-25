@@ -48,6 +48,8 @@ std::pair<std::unique_ptr<Figure>, std::optional<std::string>> loadPrimitive(std
             figure->material = Material::METALLIC;
         } else if (cmd == "DIELECTRIC") {
             figure->material = Material::DIELECTRIC;
+        } else if (cmd == "IOR") {
+            ss >> figure->ior;
         } else {
             return std::make_pair(std::move(figure), cmdLine);
         }
