@@ -4,7 +4,7 @@
 #include <iostream>
 
 #ifdef DEBUG
-#define SAMPLES_DROP 2
+#define SAMPLES_DROP 3
 #else
 #define SAMPLES_DROP 1
 #endif
