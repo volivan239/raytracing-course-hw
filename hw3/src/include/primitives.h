@@ -23,8 +23,15 @@ struct Intersection {
     bool is_inside;    
 };
 
+enum class FigureType {
+    ELLIPSOID, PLANE, BOX
+};
+
 class Figure {
-    virtual std::optional<Intersection> rawIntersect(const Ray &ray) const = 0;
+private:
+    std::optional<Intersection> intersectAsEllipsoid(const Ray &ray) const;
+    std::optional<Intersection> intersectAsPlane(const Ray &ray) const;
+    std::optional<Intersection> intersectAsBox(const Ray &ray) const;
 
 public:
     Vec3 position = {0, 0, 0};
@@ -34,40 +41,27 @@ public:
     Color emission;
     float ior;
 
+    FigureType type;
+    Vec3 data;
+
     Figure();
+    Figure(FigureType type, Vec3 data);
 
     std::optional<Intersection> intersect(const Ray &ray) const;
 };
 
-class Ellipsoid : public Figure {
-private:
-    virtual std::optional<Intersection> rawIntersect(const Ray &ray) const override;
 
-public:
-    Vec3 r;
+inline Ray::Ray() {}
+inline Ray::Ray(Vec3 o, Vec3 d): o(o), d(d) {}
 
-    Ellipsoid();
-    Ellipsoid(Vec3 r);
-};
+inline Ray Ray::operator + (const Vec3 &other) const {
+    return {o + other, d};
+}
 
-class Plane : public Figure {
-private:
-    virtual std::optional<Intersection> rawIntersect(const Ray &ray) const override;
+inline Ray Ray::operator - (const Vec3 &other) const {
+    return {o - other, d};
+}
 
-public:
-    Vec3 n;
-
-    Plane();
-    Plane(Vec3 n);
-};
-
-class Box : public Figure {
-private:
-    virtual std::optional<Intersection> rawIntersect(const Ray &ray) const override;
-
-public:
-    Vec3 s;
-
-    Box();
-    Box(Vec3 s);
-};
+inline Ray Ray::rotate(const Quaternion &rotation) const {
+    return {rotation.transform(o), rotation.transform(d)};
+}

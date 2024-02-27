@@ -3,15 +3,15 @@
 #include <sstream>
 #include <iostream>
 
-#define SAMPLES_DROP 8
+#define SAMPLES_DROP 2;
 
 namespace sceneio {
 
-std::pair<std::unique_ptr<Figure>, std::optional<std::string>> loadPrimitive(std::istream &in) {
+std::pair<Figure, std::optional<std::string>> loadPrimitive(std::istream &in) {
     std::string cmdLine;
 
     getline(in, cmdLine);
-    std::unique_ptr<Figure> figure;
+    Figure figure;
     std::stringstream ss;
     ss << cmdLine;
     std::string figureName;
@@ -20,18 +20,18 @@ std::pair<std::unique_ptr<Figure>, std::optional<std::string>> loadPrimitive(std
     if (figureName == "ELLIPSOID") {
         Vec3 r;
         ss >> r;
-        figure = std::unique_ptr<Figure>(new Ellipsoid(r));
+        figure = Figure(FigureType::ELLIPSOID, r);
     } else if (figureName == "PLANE") {
         Vec3 n;
         ss >> n;
-        figure = std::unique_ptr<Figure>(new Plane(n));
+        figure = Figure(FigureType::PLANE, n);
     } else if (figureName == "BOX") {
         Vec3 s;
         ss >> s;
-        figure = std::unique_ptr<Figure>(new Box(s));
+        figure = Figure(FigureType::BOX, s);
     } else {
         std::cerr << "UNKNWOWN FIGURE: " << figureName << '@' << cmdLine << std::endl;
-        return std::make_pair(nullptr, cmdLine);
+        return std::make_pair(figure, cmdLine);
     }
 
     while (getline(in, cmdLine)) {
@@ -41,24 +41,24 @@ std::pair<std::unique_ptr<Figure>, std::optional<std::string>> loadPrimitive(std
         ss << cmdLine;
         ss >> cmd;
         if (cmd == "COLOR") {
-            ss >> figure->color;
+            ss >> figure.color;
         } else if (cmd == "POSITION") {
-            ss >> figure->position;
+            ss >> figure.position;
         } else if (cmd == "ROTATION") {
-            ss >> figure->rotation;
+            ss >> figure.rotation;
         } else if (cmd == "METALLIC") {
-            figure->material = Material::METALLIC;
+            figure.material = Material::METALLIC;
         } else if (cmd == "DIELECTRIC") {
-            figure->material = Material::DIELECTRIC;
+            figure.material = Material::DIELECTRIC;
         } else if (cmd == "EMISSION") {
-            ss >> figure->emission;
+            ss >> figure.emission;
         } else if (cmd == "IOR") {
-            ss >> figure->ior;
+            ss >> figure.ior;
         } else {
-            return std::make_pair(std::move(figure), cmdLine);
+            return std::make_pair(figure, cmdLine);
         }
     }
-    return std::make_pair(std::move(figure), std::nullopt);
+    return std::make_pair(figure, std::nullopt);
 }
 
 Scene loadScene(std::istream &in) {
@@ -88,7 +88,7 @@ Scene loadScene(std::istream &in) {
                 ss >> scene.cameraFovX;
             } else if (cmd == "NEW_PRIMITIVE") {
                 auto [figure, nextCmd] = loadPrimitive(in);
-                scene.figures.push_back(std::move(figure));
+                scene.figures.push_back(figure);
                 if (nextCmd.has_value()) {
                     cmdLine = nextCmd.value();
                     continue;

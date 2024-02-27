@@ -2,29 +2,22 @@
 #include <math.h>
 #include <cassert>
 
-Ray::Ray() {}
-Ray::Ray(Vec3 o, Vec3 d): o(o), d(d) {}
+Figure::Figure() {};
 
-Ray Ray::operator + (const Vec3 &other) const {
-    return {o + other, d};
-}
-
-Ray Ray::operator - (const Vec3 &other) const {
-    return {o - other, d};
-}
-
-Ray Ray::rotate(const Quaternion &rotation) const {
-    return {rotation.transform(o), rotation.transform(d)};
-}
-
-Figure::Figure() {}
-
-Ellipsoid::Ellipsoid() {}
-Ellipsoid::Ellipsoid(Vec3 r): r(r) {}
+Figure::Figure(FigureType type, Vec3 data): type(type), data(data) {};
 
 std::optional<Intersection> Figure::intersect(const Ray &ray) const {
     Ray transformed = (ray - position).rotate(rotation);
-    auto result = rawIntersect(transformed);
+
+    std::optional<Intersection> result;
+    if (type == FigureType::ELLIPSOID) {
+        result = intersectAsEllipsoid(transformed);
+    } else if (type == FigureType::PLANE) {
+        result = intersectAsPlane(transformed);
+    } else {
+        result = intersectAsBox(transformed);
+    }
+
     if (!result.has_value()) {
         return {};
     }
@@ -54,7 +47,8 @@ std::optional<std::pair<float, bool>> smallestPositiveRootOfSquareEquation(float
     }
 }
 
-std::optional<Intersection> Ellipsoid::rawIntersect(const Ray &ray) const {
+std::optional<Intersection> Figure::intersectAsEllipsoid(const Ray &ray) const {
+    Vec3 r = data;
     float c = (ray.o / r).len2() - 1;
     float b = 2. * (ray.o / r).dot(ray.d / r);
     float a = (ray.d / r).len2();
@@ -74,10 +68,8 @@ std::optional<Intersection> Ellipsoid::rawIntersect(const Ray &ray) const {
     return {Intersection {t, norma.normalize(), is_inside}};
 }
 
-Plane::Plane() {}
-Plane::Plane(Vec3 n): n(n.normalize()) {}
-
-std::optional<Intersection> Plane::rawIntersect(const Ray &ray) const {
+std::optional<Intersection> Figure::intersectAsPlane(const Ray &ray) const {
+    Vec3 n = data;
     float t = -ray.o.dot(n) / ray.d.dot(n);
     if (t > 0) {
         if (ray.d.dot(n) > 0) {
@@ -88,11 +80,8 @@ std::optional<Intersection> Plane::rawIntersect(const Ray &ray) const {
     return {};
 }
 
-
-Box::Box() {}
-Box::Box(Vec3 s): s(s) {}
-
-std::optional<Intersection> Box::rawIntersect(const Ray &ray) const {
+std::optional<Intersection> Figure::intersectAsBox(const Ray &ray) const {
+    Vec3 s = data;
     Vec3 ts1 = (-1. * s - ray.o) / ray.d;
     Vec3 ts2 = (s - ray.o) / ray.d;
     float t1x = std::min(ts1.x, ts2.x), t2x = std::max(ts1.x, ts2.x);

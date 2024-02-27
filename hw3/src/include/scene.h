@@ -19,7 +19,7 @@ public:
     Color bgColor;
     Vec3 cameraPos, cameraUp, cameraRight, cameraForward;
     float cameraFovX;
-    std::vector<std::unique_ptr<Figure>> figures;
+    std::vector<Figure> figures;
 
     Scene();
 
