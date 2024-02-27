@@ -1,7 +1,5 @@
 #include "primitives.h"
 #include <math.h>
-#include <cassert>
-#include <iostream>
 
 Figure::Figure() {};
 
@@ -121,6 +119,5 @@ std::optional<Intersection> Figure::intersectAsBox(const Ray &ray) const {
         norma = -1. * norma;
     }
 
-    assert(ray.d.dot(norma) <= 0);
     return {Intersection {t, norma, is_inside}};
 }

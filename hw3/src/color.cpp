@@ -1,5 +1,4 @@
 #include "color.h"
-#include <cassert>
 #include <math.h>
 
 uint8_t* toExternColorFormat(const Color &color) {
