@@ -3,8 +3,6 @@
 #include <sstream>
 #include <iostream>
 
-#define SAMPLES_DROP 1;
-
 namespace sceneio {
 
 std::pair<Figure, std::optional<std::string>> loadPrimitive(std::istream &in) {
@@ -97,7 +95,6 @@ Scene loadScene(std::istream &in) {
                 ss >> scene.rayDepth;
             } else if (cmd == "SAMPLES") {
                 ss >> scene.samples;
-                scene.samples /= SAMPLES_DROP;
             } else {
                 if (cmd != "") {
                     std::cerr << "UNKNOWN COMMAND: " << cmd << std::endl;

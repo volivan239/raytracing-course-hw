@@ -1,6 +1,7 @@
 #include "primitives.h"
 #include <math.h>
 #include <cassert>
+#include <iostream>
 
 Figure::Figure() {};
 
@@ -64,7 +65,6 @@ std::optional<Intersection> Figure::intersectAsEllipsoid(const Ray &ray) const {
     if (is_inside) {
         norma = -1. * norma;
     }
-    assert(norma.dot(ray.d) <= 0);
     return {Intersection {t, norma.normalize(), is_inside}};
 }
 
