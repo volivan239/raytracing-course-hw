@@ -3,7 +3,7 @@
 #include <sstream>
 #include <iostream>
 
-#define SAMPLES_DROP 2;
+#define SAMPLES_DROP 1;
 
 namespace sceneio {
 
