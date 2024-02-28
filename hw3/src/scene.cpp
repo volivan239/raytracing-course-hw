@@ -42,11 +42,20 @@ Color Scene::getColor(const Ray &ray, int recLimit) const {
     auto [intersection, figurePos] = intersection_.value();
     auto [t, norma, is_inside] = intersection;
 
+    // if (figures[figurePos].color.y > 2.) {
+    //     std::cout << "FUCK" << std::endl;
+    // }
+    // if (figures[figurePos].emission.y > 2.) {
+    //     std::cout << "FUCK 2" << std::endl;
+    // }
     if (figures[figurePos].material == Material::DIFFUSE) {
         Vec3 w = Vec3 {n01(rnd), n01(rnd), n01(rnd)}.normalize();
         if (w.dot(norma) < 0) {
             w = -1. * w;
         }
+        // if (w.dot(norma) > 2) {
+        //     std::cout << "FUCK 3" << std::endl;
+        // }
         Ray wRay = Ray(ray.o + t * ray.d + 0.0001 * w, w);
         return figures[figurePos].emission + 2 * w.dot(norma) * figures[figurePos].color * getColor(wRay, recLimit - 1);
     } else if (figures[figurePos].material == Material::METALLIC) {

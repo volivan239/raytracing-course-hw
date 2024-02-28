@@ -38,7 +38,7 @@ public:
     Quaternion rotation = {0, 0, 0, 1};
     Material material = Material::DIFFUSE;
     Color color;
-    Color emission;
+    Color emission = {0, 0, 0};
     float ior;
 
     FigureType type;
