@@ -1,9 +1,7 @@
 #include "color.h"
 #include <cmath>
-#include <iostream>
 
 uint8_t* toExternColorFormat(const Color &color) {
-    // std::cerr << color.x << ' ' << color.y << ' ' << color.z << '\n';
     uint8_t *ans = new uint8_t[3];
     ans[0] = round(255 * color.x);
     ans[1] = round(255 * color.y);
@@ -25,7 +23,6 @@ static Color saturate(const Color &color) {
 }
 
 Color aces_tonemap(const Color &x) {
-    // std::cerr << x.x << ' ' << x.y << ' ' << x.z << std::endl;
     const float a = 2.51f;
     const float b = 0.03f;
     const float c = 2.43f;
