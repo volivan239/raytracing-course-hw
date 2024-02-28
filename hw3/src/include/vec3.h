@@ -1,10 +1,10 @@
 #pragma once
 #include <istream>
-#include <math.h>
+#include <cmath>
 
 class Vec3 {
 public:
-    float x, y, z;
+    float x = 0, y = 0, z = 0;
 
     Vec3();
     Vec3(float x, float y, float z);

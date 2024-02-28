@@ -34,8 +34,8 @@ private:
     std::optional<Intersection> intersectAsBox(const Ray &ray) const;
 
 public:
-    Vec3 position = {0, 0, 0};
-    Quaternion rotation = {0, 0, 0, 1};
+    Vec3 position;
+    Quaternion rotation;
     Material material = Material::DIFFUSE;
     Color color;
     Color emission;

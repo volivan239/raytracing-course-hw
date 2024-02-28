@@ -1,6 +1,5 @@
 #include "scene.h"
-#include <math.h>
-#include <iostream>
+#include <cmath>
 #include <random>
 
 static std::minstd_rand rnd;

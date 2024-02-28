@@ -1,5 +1,5 @@
 #include "primitives.h"
-#include <math.h>
+#include <cmath>
 
 Figure::Figure() {};
 
