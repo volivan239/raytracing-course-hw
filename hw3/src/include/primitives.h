@@ -34,12 +34,12 @@ private:
     std::optional<Intersection> intersectAsBox(const Ray &ray) const;
 
 public:
-    Vec3 position = {0, 0, 0};
+    Vec3 position;
     Quaternion rotation = {0, 0, 0, 1};
     Material material = Material::DIFFUSE;
-    Color color = {0, 0, 0};
-    Color emission = {0, 0, 0};
-    float ior = 1.0;
+    Color color;
+    Color emission;
+    float ior;
 
     FigureType type;
     Vec3 data;

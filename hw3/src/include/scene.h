@@ -16,7 +16,7 @@ public:
     int samples;
     int rayDepth;
     int width, height;
-    Color bgColor = {0, 0, 0};
+    Color bgColor;
     Vec3 cameraPos, cameraUp, cameraRight, cameraForward;
     float cameraFovX;
     std::vector<Figure> figures;
