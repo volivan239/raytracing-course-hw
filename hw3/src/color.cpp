@@ -1,5 +1,5 @@
 #include "color.h"
-#include <math.h>
+#include <cmath>
 
 uint8_t* toExternColorFormat(const Color &color) {
     uint8_t *ans = new uint8_t[3];

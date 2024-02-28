@@ -1,5 +1,5 @@
 #include "scene.h"
-#include <math.h>
+#include <cmath>
 #include <iostream>
 #include <random>
 

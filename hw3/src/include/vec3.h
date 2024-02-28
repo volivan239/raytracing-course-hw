@@ -1,6 +1,6 @@
 #pragma once
 #include <istream>
-#include <math.h>
+#include <cmath>
 
 class Vec3 {
 public:

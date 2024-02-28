@@ -22,7 +22,7 @@ std::pair<Figure, std::optional<std::string>> loadPrimitive(std::istream &in) {
     } else if (figureName == "PLANE") {
         Vec3 n;
         ss >> n;
-        figure = Figure(FigureType::PLANE, n);
+        figure = Figure(FigureType::PLANE, n.normalize());
     } else if (figureName == "BOX") {
         Vec3 s;
         ss >> s;
