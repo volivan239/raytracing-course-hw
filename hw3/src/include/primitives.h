@@ -35,7 +35,7 @@ private:
 
 public:
     Vec3 position;
-    Quaternion rotation = {0, 0, 0, 1};
+    Quaternion rotation;
     Material material = Material::DIFFUSE;
     Color color;
     Color emission;

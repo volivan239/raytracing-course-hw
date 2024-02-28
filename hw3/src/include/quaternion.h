@@ -23,7 +23,7 @@ public:
 std::istream &operator >> (std::istream &in, Quaternion &q);
 
 
-inline Quaternion::Quaternion(): v{0, 0, 0}, w(0) {}
+inline Quaternion::Quaternion(): v{0, 0, 0}, w(1) {}
 
 inline Quaternion::Quaternion(float x, float y, float z, float w): v{x, y, z}, w(w) {}
 
