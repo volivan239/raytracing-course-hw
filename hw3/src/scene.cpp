@@ -41,25 +41,24 @@ Color Scene::getColor(const Ray &ray, int recLimit) const {
 
     auto [intersection, figurePos] = intersection_.value();
     auto [t, norma, is_inside] = intersection;
-    auto figurePtr = figures.begin() + figurePos;
 
-    if (figurePtr->material == Material::DIFFUSE) {
+    if (figures[figurePos].material == Material::DIFFUSE) {
         Vec3 w = Vec3 {n01(rnd), n01(rnd), n01(rnd)}.normalize();
         if (w.dot(norma) < 0) {
             w = -1. * w;
         }
         Ray wRay = Ray(ray.o + t * ray.d + 0.0001 * w, w);
-        return figurePtr->emission + 2 * w.dot(norma) * figurePtr->color * getColor(wRay, recLimit - 1);
-    } else if (figurePtr->material == Material::METALLIC) {
+        return figures[figurePos].emission + 2 * w.dot(norma) * figures[figurePos].color * getColor(wRay, recLimit - 1);
+    } else if (figures[figurePos].material == Material::METALLIC) {
         Vec3 reflectedDir = ray.d.normalize() - 2. * norma.dot(ray.d.normalize()) * norma;
         Ray reflected = Ray(ray.o + t * ray.d + 0.0001 * reflectedDir, reflectedDir);
-        return figurePtr->emission + figurePtr->color * getColor(reflected, recLimit - 1);
+        return figures[figurePos].emission + figures[figurePos].color * getColor(reflected, recLimit - 1);
     } else {
         Vec3 reflectedDir = ray.d.normalize() - 2. * norma.dot(ray.d.normalize()) * norma;
         Ray reflected = Ray(ray.o + t * ray.d + 0.0001 * reflectedDir, reflectedDir);
         Color reflectedColor = getColor(reflected, recLimit - 1);
 
-        float eta1 = 1., eta2 = figurePtr->ior;
+        float eta1 = 1., eta2 = figures[figurePos].ior;
         if (is_inside) {
             std::swap(eta1, eta2);
         }
@@ -67,13 +66,13 @@ Color Scene::getColor(const Ray &ray, int recLimit) const {
         Vec3 l = -1. * ray.d.normalize();
         float sinTheta2 = eta1 / eta2 * sqrt(1 - norma.dot(l) * norma.dot(l));
         if (fabs(sinTheta2) > 1.) {
-            return figurePtr->emission + reflectedColor;
+            return figures[figurePos].emission + reflectedColor;
         }
 
         float r0 = pow((eta1 - eta2) / (eta1 + eta2), 2.);
         float r = r0 + (1 - r0) * pow(1 - norma.dot(l), 5.);
         if (u01(rnd) < r) {
-            return figurePtr->emission + reflectedColor;
+            return figures[figurePos].emission + reflectedColor;
         }
 
         float cosTheta2 = sqrt(1 - sinTheta2 * sinTheta2);
@@ -81,9 +80,9 @@ Color Scene::getColor(const Ray &ray, int recLimit) const {
         Ray refracted = Ray(ray.o + t * ray.d + 0.0001 * refractedDir, refractedDir);
         Color refractedColor = getColor(refracted, recLimit - 1);
         if (!is_inside) {
-            refractedColor = refractedColor * figurePtr->color;
+            refractedColor = refractedColor * figures[figurePos].color;
         }
-        return figurePtr->emission + refractedColor;
+        return figures[figurePos].emission + refractedColor;
     }
 }
 
