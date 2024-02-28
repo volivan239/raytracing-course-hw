@@ -37,9 +37,9 @@ public:
     Vec3 position = {0, 0, 0};
     Quaternion rotation = {0, 0, 0, 1};
     Material material = Material::DIFFUSE;
-    Color color;
+    Color color = {0, 0, 0};
     Color emission = {0, 0, 0};
-    float ior;
+    float ior = 1.0;
 
     FigureType type;
     Vec3 data;
