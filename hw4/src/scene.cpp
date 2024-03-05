@@ -1,10 +1,11 @@
 #include "scene.h"
+#include "distributions.h"
 #include <cmath>
 #include <random>
 
-static std::minstd_rand rnd;
+static std::minstd_rand rng;
 static std::uniform_real_distribution<float> u01(0.0, 1.0);
-static std::normal_distribution<float> n01(0.0, 1.0);
+static Uniform uniform_dist = Uniform(rng);
 
 Scene::Scene() {}
 
@@ -41,14 +42,13 @@ Color Scene::getColor(const Ray &ray, int recLimit) const {
     auto [intersection, figurePos] = intersection_.value();
     auto [t, norma, is_inside] = intersection;
     auto figurePtr = figures.begin() + figurePos;
+    auto x = ray.o + t * ray.d;
 
     if (figurePtr->material == Material::DIFFUSE) {
-        Vec3 w = Vec3 {n01(rnd), n01(rnd), n01(rnd)}.normalize();
-        if (w.dot(norma) < 0) {
-            w = -1. * w;
-        }
-        Ray wRay = Ray(ray.o + t * ray.d + 0.0001 * w, w);
-        return figurePtr->emission + 2 * w.dot(norma) * figurePtr->color * getColor(wRay, recLimit - 1);
+        Vec3 d = uniform_dist.sample(x, norma);
+        float pdf = uniform_dist.pdf(x, norma, d);
+        Ray dRay = Ray(x + 0.0001 * d, d);
+        return figurePtr->emission + 1. / (PI * pdf) * d.dot(norma) * figurePtr->color * getColor(dRay, recLimit - 1);
     } else if (figurePtr->material == Material::METALLIC) {
         Vec3 reflectedDir = ray.d.normalize() - 2. * norma.dot(ray.d.normalize()) * norma;
         Ray reflected = Ray(ray.o + t * ray.d + 0.0001 * reflectedDir, reflectedDir);
@@ -71,7 +71,7 @@ Color Scene::getColor(const Ray &ray, int recLimit) const {
 
         float r0 = pow((eta1 - eta2) / (eta1 + eta2), 2.);
         float r = r0 + (1 - r0) * pow(1 - norma.dot(l), 5.);
-        if (u01(rnd) < r) {
+        if (u01(rng) < r) {
             return figurePtr->emission + reflectedColor;
         }
 
@@ -89,8 +89,8 @@ Color Scene::getColor(const Ray &ray, int recLimit) const {
 Color Scene::getPixel(int x, int y) const {
     Color color {0, 0, 0};
     for (int _ = 0; _ < samples; _++) {
-        float nx = x + u01(rnd);
-        float ny = y + u01(rnd);
+        float nx = x + u01(rng);
+        float ny = y + u01(rng);
         color = color + getColor(getCameraRay(nx, ny), rayDepth);
     }
     return 1.0 / samples * color;
