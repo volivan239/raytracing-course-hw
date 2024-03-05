@@ -100,8 +100,8 @@ Ray Scene::getCameraRay(float x, float y) const {
     float tanFovX = tan(cameraFovX / 2);
     float tanFovY = tanFovX * height / width;
 
-    float nx = tanFovX * (2 * (x + 0.5) / width - 1);
-    float ny = tanFovY * (2 * (y + 0.5) / height - 1);
+    float nx = tanFovX * (2 * x / width - 1);
+    float ny = tanFovY * (2 * y / height - 1);
 
     return {cameraPos, nx * cameraRight - ny * cameraUp + cameraForward};
 }
