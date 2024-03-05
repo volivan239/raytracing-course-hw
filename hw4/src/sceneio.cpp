@@ -112,8 +112,9 @@ void renderScene(const Scene &scene, std::ostream &out) {
     out << 255 << '\n';
     for (int y = 0; y < scene.height; y++) {
         for (int x = 0; x < scene.width; x++) {
+            auto pixel0 = scene.getPixel(x, y);
             uint8_t *pixel = toExternColorFormat(
-                gamma_corrected(aces_tonemap(scene.getPixel(x, y)))
+                gamma_corrected(aces_tonemap(pixel0))
             );
             out.write((char *) pixel, 3);
         }
