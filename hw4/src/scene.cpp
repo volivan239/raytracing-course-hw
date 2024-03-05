@@ -5,7 +5,7 @@
 
 static std::minstd_rand rng;
 static std::uniform_real_distribution<float> u01(0.0, 1.0);
-static Uniform uniform_dist = Uniform(rng);
+static Cosine main_dist = Cosine(rng);
 
 Scene::Scene() {}
 
@@ -45,8 +45,8 @@ Color Scene::getColor(const Ray &ray, int recLimit) const {
     auto x = ray.o + t * ray.d;
 
     if (figurePtr->material == Material::DIFFUSE) {
-        Vec3 d = uniform_dist.sample(x, norma);
-        float pdf = uniform_dist.pdf(x, norma, d);
+        Vec3 d = main_dist.sample(x, norma);
+        float pdf = main_dist.pdf(x, norma, d);
         Ray dRay = Ray(x + 0.0001 * d, d);
         return figurePtr->emission + 1. / (PI * pdf) * d.dot(norma) * figurePtr->color * getColor(dRay, recLimit - 1);
     } else if (figurePtr->material == Material::METALLIC) {
