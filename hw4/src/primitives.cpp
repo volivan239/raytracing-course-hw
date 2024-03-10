@@ -1,5 +1,6 @@
 #include "primitives.h"
 #include <cmath>
+#include <iostream>
 
 Figure::Figure() {};
 
@@ -26,6 +27,10 @@ std::optional<Intersection> Figure::intersect(const Ray &ray) const {
 }
 
 std::optional<std::pair<float, bool>> smallestPositiveRootOfSquareEquation(float a, float b, float c) {
+    if (rand() % 1000000 == 0) {
+        // std::cerr << "HERE: " << a << ' ' << b << ' ' << c << ' ' << sqrt(b * b - 4 * a * c) << std::endl;
+    }
+    
     float d = b * b - 4 * a * c;
     if (d <= 0) {
         return {};
