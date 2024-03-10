@@ -200,25 +200,25 @@ public:
             return INFINITY; // Shouldn't happen actually...
         }
         Vec3 y = x + t * d;
-        if (fabs(std::normal_distribution<float>{0.0, 1.0}(rng)) > 4.8) {
-            // std::cerr << "!! " << "(" << x.x << ' ' << x.y << ' ' << x.z << "); (" << d.x << ' ' << d.y << ' ' << d.z << "); t = " << t << std::endl;
-        }
+        // if (fabs(std::normal_distribution<float>{0.0, 1.0}(rng)) > 4.8) {
+        //     // std::cerr << "!! " << "(" << x.x << ' ' << x.y << ' ' << x.z << "); (" << d.x << ' ' << d.y << ' ' << d.z << "); t = " << t << std::endl;
+        // }
         float ans = pdfOne(x, d, y, yn);
 
         auto secondIntersection = ellipsoid.intersect(Ray(x + (t + 0.0001) * d, d));
         if (!secondIntersection.has_value()) {
-            if (fabs(std::normal_distribution<float>{0.0, 1.0}(rng)) > 4.8) {
-                // std::cerr << "!! " << ans << std::endl;
-            // std::cerr << "!! " << "(" << x.x << ' ' << x.y << ' ' << x.z << "); (" << d.x << ' ' << d.y << ' ' << d.z << "); t = " << t << std::endl;
-            }
+            // if (fabs(std::normal_distribution<float>{0.0, 1.0}(rng)) > 4.8) {
+            //     // std::cerr << "!! " << ans << std::endl;
+            // // std::cerr << "!! " << "(" << x.x << ' ' << x.y << ' ' << x.z << "); (" << d.x << ' ' << d.y << ' ' << d.z << "); t = " << t << std::endl;
+            // }
             return ans;
         }
         auto [t2, yn2, __] = secondIntersection.value();
         Vec3 y2 = x + (t + 0.0001 + t2) * d;
-        if (fabs(std::normal_distribution<float>{0.0, 1.0}(rng)) > 4.8) {
-            // std::cerr << "!!! " << ans + pdfOne(x, d, y2, yn2) << std::endl;
-            // std::cerr << "!! " << "(" << x.x << ' ' << x.y << ' ' << x.z << "); (" << d.x << ' ' << d.y << ' ' << d.z << "); t = " << t << std::endl;
-        }
+        // if (fabs(std::normal_distribution<float>{0.0, 1.0}(rng)) > 4.8) {
+        //     // std::cerr << "!!! " << ans + pdfOne(x, d, y2, yn2) << std::endl;
+        //     // std::cerr << "!! " << "(" << x.x << ' ' << x.y << ' ' << x.z << "); (" << d.x << ' ' << d.y << ' ' << d.z << "); t = " << t << std::endl;
+        // }
         return ans + pdfOne(x, d, y2, yn2);
     }
 };
