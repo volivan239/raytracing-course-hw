@@ -103,6 +103,7 @@ Scene loadScene(std::istream &in) {
             break;
         }
     }
+    scene.initDistribution();
     return scene;
 }
 

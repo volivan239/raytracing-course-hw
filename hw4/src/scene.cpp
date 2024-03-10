@@ -1,5 +1,4 @@
 #include "scene.h"
-#include "distributions.h"
 #include <cmath>
 #include <random>
 
@@ -8,6 +7,19 @@ static std::uniform_real_distribution<float> u01(0.0, 1.0);
 static Cosine main_dist = Cosine(rng);
 
 Scene::Scene() {}
+
+void Scene::initDistribution() {
+    std::vector<std::unique_ptr<Distribution>> lightDistributions;
+    for (const auto &figure: figures) {
+        if (figure.emission.x > 0 || figure.emission.y > 0 || figure.emission.z > 0) {
+            if (figure.type == FigureType::BOX) {
+                lightDistributions.push_back(std::unique_ptr<Distribution>(new BoxLight(rng, figure)));
+            }
+        }
+    }
+    lightDistributions.push_back(std::unique_ptr<Distribution>(new Cosine(rng)));
+    distribution = std::unique_ptr<Distribution>(new Mix(rng, std::move(lightDistributions)));
+}
 
 std::optional<std::pair<Intersection, int>> Scene::intersect(const Ray &ray, float tmax) const {
     Intersection bestIntersection;
@@ -45,9 +57,13 @@ Color Scene::getColor(const Ray &ray, int recLimit) const {
     auto x = ray.o + t * ray.d;
 
     if (figurePtr->material == Material::DIFFUSE) {
-        Vec3 d = main_dist.sample(x, norma);
-        float pdf = main_dist.pdf(x, norma, d);
+        // auto dist = getDistribution();
+        Vec3 d = distribution->sample(x + 0.0001 * norma, norma);
+        float pdf = distribution->pdf(x + 0.0001 * norma, norma, d);
         Ray dRay = Ray(x + 0.0001 * d, d);
+        if (d.dot(norma) < 0) {
+            return figurePtr->emission;
+        }
         return figurePtr->emission + 1. / (PI * pdf) * d.dot(norma) * figurePtr->color * getColor(dRay, recLimit - 1);
     } else if (figurePtr->material == Material::METALLIC) {
         Vec3 reflectedDir = ray.d.normalize() - 2. * norma.dot(ray.d.normalize()) * norma;

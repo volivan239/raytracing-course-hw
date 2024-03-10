@@ -1,20 +1,31 @@
 #pragma once
 #include <random>
 #include <cmath>
+#include <memory>
+#include <iostream>
 #include "vec3.h"
+#include "primitives.h"
 
 typedef std::minstd_rand rng_type;
 const float PI = acos(-1);
 
-class Uniform {
+
+class Distribution {
+public:
+    virtual Vec3 sample(Vec3 x, Vec3 n) = 0;
+    virtual float pdf(Vec3 x, Vec3 n, Vec3 d) const = 0;
+};
+
+
+class Uniform : public Distribution {
 private:
     std::normal_distribution<float> n01{0.f, 1.f};
-    std::minstd_rand &rng;
+    rng_type &rng;
 
 public:
     Uniform(rng_type &rng): rng(rng) {}
 
-    Vec3 sample(Vec3 x, Vec3 n) {
+    Vec3 sample(Vec3 x, Vec3 n) override {
         (void) x;
         Vec3 d = Vec3 {n01(rng), n01(rng), n01(rng)}.normalize();
         if (d.dot(n) < 0) {
@@ -23,7 +34,7 @@ public:
         return d;
     }
 
-    float pdf(Vec3 x, Vec3 n, Vec3 d) const {
+    float pdf(Vec3 x, Vec3 n, Vec3 d) const override {
         (void) x;
         if (d.dot(n) < 0) {
             return 0;
@@ -32,16 +43,17 @@ public:
     }
 };
 
-class Cosine {
+
+class Cosine : public Distribution {
 private:
     std::normal_distribution<float> n01{0.f, 1.f};
-    std::minstd_rand &rng;
+    rng_type &rng;
     static constexpr float eps = 1e-9;
 
 public:
     Cosine(rng_type &rng): rng(rng) {}
 
-    Vec3 sample(Vec3 x, Vec3 n) {
+    Vec3 sample(Vec3 x, Vec3 n) override {
         (void) x;
         Vec3 d = Vec3 {n01(rng), n01(rng), n01(rng)}.normalize();
         d = d + n;
@@ -55,8 +67,100 @@ public:
         return 1. / len * d;
     }
 
-    float pdf(Vec3 x, Vec3 n, Vec3 d) const {
+    float pdf(Vec3 x, Vec3 n, Vec3 d) const override {
         (void) x;
         return std::max(0.f, d.dot(n) / PI);
+    }
+};
+
+
+class BoxLight : public Distribution {
+private:
+    std::uniform_real_distribution<float> u01{0.0, 1.0};
+    rng_type &rng;
+    const Figure &box;
+    
+    float pdfOne(Vec3 x, Vec3 d, Vec3 y, Vec3 yn) const {
+        float sx = box.data.x, sy = box.data.y, sz = box.data.z;
+        float sTotal = 8 * (sy * sz + sx * sz + sx * sy);
+        return (x - y).len2() / (sTotal * fabs(d.dot(yn)));
+    }
+
+public:
+    BoxLight(rng_type &rng, const Figure &box): rng(rng), box(box) {}
+
+    Vec3 sample(Vec3 x, Vec3 n) override {
+        (void) n;
+
+        float sx = box.data.x, sy = box.data.y, sz = box.data.z;
+        float wx = sy * sz;
+        float wy = sx * sz;
+        float wz = sx * sy;
+
+        while (true) {
+            float u = u01(rng) * (wx + wy + wz);
+            float flipSign = u01(rng) > 0.5 ? 1 : -1;
+            Vec3 point;
+
+            if (u < wx) {
+                point = Vec3(flipSign * sx, (2 * u01(rng) - 1) * sy, (2 * u01(rng) - 1) * sz);
+            } else if (u < wx + wy) {
+                point = Vec3((2 * u01(rng) - 1) * sx, flipSign * sy, (2 * u01(rng) - 1) * sz);
+            } else {
+                point = Vec3((2 * u01(rng) - 1) * sx, (2 * u01(rng) - 1) * sy, flipSign * sz);
+            }
+
+            Vec3 actualPoint = box.rotation.conjugate().transform(point) + box.position;
+            if (box.intersect(Ray(x, (actualPoint - x).normalize())).has_value()) {
+                return (actualPoint - x).normalize();
+            }
+        }
+    }
+
+    float pdf(Vec3 x, Vec3 n, Vec3 d) const override {
+        (void) n;
+
+        auto firstIntersection = box.intersect(Ray(x, d));
+        if (!firstIntersection.has_value()) {
+            return 0.;// pdfOne(x, d, x, n);
+        }
+        auto [t, yn, _] = firstIntersection.value();
+        if (std::isnan(t)) {
+            return INFINITY;
+        }
+        Vec3 y = x + t * d;
+        float ans = pdfOne(x, d, y, yn);
+
+        auto secondIntersection = box.intersect(Ray(x + (t + 0.0001) * d, d));
+        if (!secondIntersection.has_value()) {
+            return ans;
+        }
+        auto [t2, yn2, __] = secondIntersection.value();
+        Vec3 y2 = x + (t + 0.0001 + t2) * d;
+        return ans + pdfOne(x, d, y2, yn2);
+    }
+};
+
+
+class Mix : public Distribution {
+private:
+    std::uniform_real_distribution<float> u01{0.0, 1.0};
+    rng_type &rng;
+    const std::vector<std::unique_ptr<Distribution>> components;
+
+public:
+    Mix(rng_type &rng, std::vector<std::unique_ptr<Distribution>> &&components): rng(rng), components(std::move(components)) {}
+
+    Vec3 sample(Vec3 x, Vec3 n) override {
+        int distNum = u01(rng) * components.size();
+        return components[distNum]->sample(x, n);
+    }
+
+    float pdf(Vec3 x, Vec3 n, Vec3 d) const override {
+        float ans = 0;
+        for (const auto &component : components) {
+            ans += component->pdf(x, n, d);
+        }
+        return ans / components.size();
     }
 };

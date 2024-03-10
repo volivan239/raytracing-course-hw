@@ -2,12 +2,15 @@
 #include "vec3.h"
 #include "color.h"
 #include "primitives.h"
+#include "distributions.h"
 #include <string>
 #include <vector>
 #include <memory>
 
 class Scene {
 private:
+    std::unique_ptr<Distribution> distribution;
+
     Ray getCameraRay(float x, float y) const;
     std::optional<std::pair<Intersection, int>> intersect(const Ray &ray, float tmax = 1. / 0.) const;
     Color getColor(const Ray &ray, int recLimit) const;
@@ -24,4 +27,5 @@ public:
     Scene();
 
     Color getPixel(int x, int y) const;
+    void initDistribution();
 };
