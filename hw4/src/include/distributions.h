@@ -79,18 +79,17 @@ private:
     std::uniform_real_distribution<float> u01{0.0, 1.0};
     rng_type &rng;
     const Figure &box;
+    float sTotal;
     
     float pdfOne(Vec3 x, Vec3 d, Vec3 y, Vec3 yn) const {
-        float sx = box.data.x, sy = box.data.y, sz = box.data.z;
-        float sTotal = 8 * (sy * sz + sx * sz + sx * sy);
-        // if (fabs(std::normal_distribution<float>{0.0, 1.0}(rng)) > 4.8) {
-        //     std::cerr << (x - y).len2() / (sTotal * fabs(d.dot(yn))) << std::endl;
-        // }
         return (x - y).len2() / (sTotal * fabs(d.dot(yn)));
     }
 
 public:
-    BoxLight(rng_type &rng, const Figure &box): rng(rng), box(box) {}
+    BoxLight(rng_type &rng, const Figure &box): rng(rng), box(box) {
+        float sx = box.data.x, sy = box.data.y, sz = box.data.z;
+        sTotal = 8 * (sy * sz + sx * sz + sx * sy);
+    }
 
     Vec3 sample(Vec3 x, Vec3 n) override {
         (void) n;
@@ -125,12 +124,10 @@ public:
 
         auto firstIntersection = box.intersect(Ray(x, d));
         if (!firstIntersection.has_value()) {
-            // std::cerr << "WTF" << std::endl;
-            return 0.;// INFINITY;
+            return 0.;
         }
         auto [t, yn, _] = firstIntersection.value();
         if (std::isnan(t)) { // Shouldn't happen actually...
-            std::cerr << "WTF" << std::endl;
             return INFINITY;
         }
         Vec3 y = x + t * d;
@@ -138,16 +135,10 @@ public:
 
         auto secondIntersection = box.intersect(Ray(x + (t + 0.0001) * d, d));
         if (!secondIntersection.has_value()) {
-            // if (fabs(std::normal_distribution<float>{0.0, 1.0}(rng)) > 4.8) {
-            //     std::cerr << "!! " << ans << std::endl;
-            // }
             return ans;
         }
         auto [t2, yn2, __] = secondIntersection.value();
         Vec3 y2 = x + (t + 0.0001 + t2) * d;
-        // if (fabs(std::normal_distribution<float>{0.0, 1.0}(rng)) > 4.8) {
-        //     std::cerr << "!!! " << ans + pdfOne(x, d, y2, yn2) << std::endl;
-        // }
         return ans + pdfOne(x, d, y2, yn2);
     }
 };
@@ -162,9 +153,6 @@ private:
         Vec3 r = ellipsoid.data;
         Vec3 n = ellipsoid.rotation.transform(y - ellipsoid.position) / r;
         float pointProb = 1. / (4 * PI * Vec3{n.x * r.y * r.z, r.x * n.y * r.z, r.x * r.y * n.z}.len());
-        // if (fabs(std::normal_distribution<float>{0.0, 1.0}(rng)) > 4.8) {
-        //     std::cerr << pointProb * (x - y).len2() / fabs(d.dot(yn)) << ' ' << pointProb << ' ' << (x - y).len2() << std::endl;
-        // }
         return pointProb * (x - y).len2() / fabs(d.dot(yn));
     }
 
@@ -178,9 +166,6 @@ public:
         while (true) {
             Vec3 point = (Vec3{n01(rng), n01(rng), n01(rng)} * r).normalize();
             Vec3 actualPoint = ellipsoid.rotation.conjugate().transform(point) + ellipsoid.position;
-            // if (fabs(std::normal_distribution<float>{0.0, 1.0}(rng)) > 4.8) {
-            //     std::cerr << (actualPoint - x).len2() << std::endl;
-            // }
             if (ellipsoid.intersect(Ray(x, (actualPoint - x).normalize())).has_value()) {
                 return (actualPoint - x).normalize();
             }
@@ -196,29 +181,18 @@ public:
         }
         auto [t, yn, _] = firstIntersection.value();
         if (std::isnan(t)) {
-            // std::cerr << "WTF" << std::endl;
             return INFINITY; // Shouldn't happen actually...
         }
         Vec3 y = x + t * d;
-        // if (fabs(std::normal_distribution<float>{0.0, 1.0}(rng)) > 4.8) {
-        //     // std::cerr << "!! " << "(" << x.x << ' ' << x.y << ' ' << x.z << "); (" << d.x << ' ' << d.y << ' ' << d.z << "); t = " << t << std::endl;
-        // }
+
         float ans = pdfOne(x, d, y, yn);
 
         auto secondIntersection = ellipsoid.intersect(Ray(x + (t + 0.0001) * d, d));
         if (!secondIntersection.has_value()) {
-            // if (fabs(std::normal_distribution<float>{0.0, 1.0}(rng)) > 4.8) {
-            //     // std::cerr << "!! " << ans << std::endl;
-            // // std::cerr << "!! " << "(" << x.x << ' ' << x.y << ' ' << x.z << "); (" << d.x << ' ' << d.y << ' ' << d.z << "); t = " << t << std::endl;
-            // }
             return ans;
         }
         auto [t2, yn2, __] = secondIntersection.value();
         Vec3 y2 = x + (t + 0.0001 + t2) * d;
-        // if (fabs(std::normal_distribution<float>{0.0, 1.0}(rng)) > 4.8) {
-        //     // std::cerr << "!!! " << ans + pdfOne(x, d, y2, yn2) << std::endl;
-        //     // std::cerr << "!! " << "(" << x.x << ' ' << x.y << ' ' << x.z << "); (" << d.x << ' ' << d.y << ' ' << d.z << "); t = " << t << std::endl;
-        // }
         return ans + pdfOne(x, d, y2, yn2);
     }
 };
