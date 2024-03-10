@@ -9,7 +9,7 @@
 
 class Scene {
 private:
-    std::unique_ptr<Distribution> distribution;
+    std::unique_ptr<Mix> distribution;
 
     Ray getCameraRay(float x, float y) const;
     std::optional<std::pair<Intersection, int>> intersect(const Ray &ray, float tmax = 1. / 0.) const;

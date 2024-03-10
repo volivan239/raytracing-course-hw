@@ -25,7 +25,7 @@ void Scene::initDistribution() {
         auto lightDistribution = std::unique_ptr<Distribution>(new Mix(rng, std::move(lightDistributions)));
         finalDistributions.push_back(std::move(lightDistribution));
     }
-    distribution = std::unique_ptr<Distribution>(new Mix(rng, std::move(finalDistributions)));
+    distribution = std::unique_ptr<Mix>(new Mix(rng, std::move(finalDistributions)));
 }
 
 std::optional<std::pair<Intersection, int>> Scene::intersect(const Ray &ray, float tmax) const {
