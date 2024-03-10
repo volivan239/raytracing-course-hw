@@ -2,7 +2,6 @@
 #include <random>
 #include <cmath>
 #include <memory>
-#include <iostream>
 #include "vec3.h"
 #include "primitives.h"
 
@@ -122,7 +121,7 @@ public:
 
         auto firstIntersection = box.intersect(Ray(x, d));
         if (!firstIntersection.has_value()) {
-            return 0.;// pdfOne(x, d, x, n);
+            return INFINITY;
         }
         auto [t, yn, _] = firstIntersection.value();
         if (std::isnan(t)) {
@@ -132,6 +131,59 @@ public:
         float ans = pdfOne(x, d, y, yn);
 
         auto secondIntersection = box.intersect(Ray(x + (t + 0.0001) * d, d));
+        if (!secondIntersection.has_value()) {
+            return ans;
+        }
+        auto [t2, yn2, __] = secondIntersection.value();
+        Vec3 y2 = x + (t + 0.0001 + t2) * d;
+        return ans + pdfOne(x, d, y2, yn2);
+    }
+};
+
+class EllipsoidLight : public Distribution {
+private:
+    std::normal_distribution<float> n01{0.0, 1.0};
+    rng_type &rng;
+    const Figure &ellipsoid;
+    
+    float pdfOne(Vec3 x, Vec3 d, Vec3 y, Vec3 yn) const     {
+        Vec3 r = ellipsoid.data;
+        Vec3 n = ellipsoid.rotation.conjugate().transform(y - ellipsoid.position) / r;
+        float pointProb = 1. / (4 * PI * Vec3{n.x * r.y * r.z, r.x * n.y * r.z, r.x * r.y * n.z}.len());
+        return pointProb * (x - y).len2() / fabs(d.dot(yn));
+    }
+
+public:
+    EllipsoidLight(rng_type &rng, const Figure &ellipsoid): rng(rng), ellipsoid(ellipsoid) {}
+
+    Vec3 sample(Vec3 x, Vec3 n) override {
+        (void) n;
+        Vec3 r = ellipsoid.data;
+
+        while (true) {
+            Vec3 point = (Vec3{n01(rng), n01(rng), n01(rng)} * r).normalize();
+            Vec3 actualPoint = ellipsoid.rotation.conjugate().transform(point) + ellipsoid.position;
+            if (ellipsoid.intersect(Ray(x, (actualPoint - x).normalize())).has_value()) {
+                return (actualPoint - x).normalize();
+            }
+        }
+    }
+
+    float pdf(Vec3 x, Vec3 n, Vec3 d) const override {
+        (void) n;
+
+        auto firstIntersection = ellipsoid.intersect(Ray(x, d));
+        if (!firstIntersection.has_value()) {
+            return INFINITY;
+        }
+        auto [t, yn, _] = firstIntersection.value();
+        if (std::isnan(t)) {
+            return INFINITY;
+        }
+        Vec3 y = x + t * d;
+        float ans = pdfOne(x, d, y, yn);
+
+        auto secondIntersection = ellipsoid.intersect(Ray(x + (t + 0.0001) * d, d));
         if (!secondIntersection.has_value()) {
             return ans;
         }

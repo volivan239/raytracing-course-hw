@@ -14,6 +14,8 @@ void Scene::initDistribution() {
         if (figure.emission.x > 0 || figure.emission.y > 0 || figure.emission.z > 0) {
             if (figure.type == FigureType::BOX) {
                 lightDistributions.push_back(std::unique_ptr<Distribution>(new BoxLight(rng, figure)));
+            } else if (figure.type == FigureType::ELLIPSOID) {
+                lightDistributions.push_back(std::unique_ptr<Distribution>(new EllipsoidLight(rng, figure)));
             }
         }
     }
@@ -62,7 +64,6 @@ Color Scene::getColor(const Ray &ray, int recLimit) const {
     auto x = ray.o + t * ray.d;
 
     if (figurePtr->material == Material::DIFFUSE) {
-        // auto dist = getDistribution();
         Vec3 d = distribution->sample(x + 0.0001 * norma, norma);
         float pdf = distribution->pdf(x + 0.0001 * norma, norma, d);
         Ray dRay = Ray(x + 0.0001 * d, d);
