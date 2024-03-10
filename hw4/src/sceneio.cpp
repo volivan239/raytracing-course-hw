@@ -95,6 +95,7 @@ Scene loadScene(std::istream &in) {
                 ss >> scene.rayDepth;
             } else if (cmd == "SAMPLES") {
                 ss >> scene.samples;
+                scene.samples *= 0.75;
             } else {
                 if (cmd != "") {
                     std::cerr << "UNKNOWN COMMAND: " << cmd << std::endl;

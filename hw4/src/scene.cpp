@@ -64,8 +64,8 @@ Color Scene::getColor(const Ray &ray, int recLimit) const {
     auto x = ray.o + t * ray.d;
 
     if (figurePtr->material == Material::DIFFUSE) {
-        Vec3 d = distribution->sample(x - 0.0001 * norma, norma);
-        float pdf = distribution->pdf(x - 0.0001 * norma, norma, d);
+        Vec3 d = distribution->sample(x + 0.0001 * norma, norma);
+        float pdf = distribution->pdf(x + 0.0001 * norma, norma, d);
         Ray dRay = Ray(x + 0.0001 * d, d);
         if (d.dot(norma) < 0) {
             return figurePtr->emission;

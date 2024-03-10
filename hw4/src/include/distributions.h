@@ -196,7 +196,7 @@ public:
         }
         auto [t, yn, _] = firstIntersection.value();
         if (std::isnan(t)) {
-            std::cerr << "WTF" << std::endl;
+            // std::cerr << "WTF" << std::endl;
             return INFINITY; // Shouldn't happen actually...
         }
         Vec3 y = x + t * d;
