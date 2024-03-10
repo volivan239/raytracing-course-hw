@@ -145,7 +145,7 @@ public:
 
 class EllipsoidLight : public Distribution {
 private:
-    std::normal_distribution<float> n01{0.0, 1.0};
+    std::normal_distribution<float> n01{0.f, 1.f};
     rng_type &rng;
     const Figure &ellipsoid;
     
@@ -164,7 +164,7 @@ public:
         Vec3 r = ellipsoid.data;
 
         while (true) {
-            Vec3 point = (Vec3{n01(rng), n01(rng), n01(rng)} * r).normalize();
+            Vec3 point = r * Vec3{n01(rng), n01(rng), n01(rng)}.normalize();
             Vec3 actualPoint = ellipsoid.rotation.conjugate().transform(point) + ellipsoid.position;
             if (ellipsoid.intersect(Ray(x, (actualPoint - x).normalize())).has_value()) {
                 return (actualPoint - x).normalize();
