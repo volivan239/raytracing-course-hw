@@ -4,7 +4,6 @@
 
 static std::minstd_rand rng;
 static std::uniform_real_distribution<float> u01(0.0, 1.0);
-static Cosine main_dist = Cosine(rng);
 
 Scene::Scene() {}
 
