@@ -1,7 +1,6 @@
 #pragma once
 #include <random>
 #include <cmath>
-#include <iostream>
 #include <memory>
 #include "vec3.h"
 #include "primitives.h"

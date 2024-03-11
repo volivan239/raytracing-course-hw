@@ -65,11 +65,11 @@ Color Scene::getColor(const Ray &ray, int recLimit) const {
 
     if (figurePtr->material == Material::DIFFUSE) {
         Vec3 d = distribution->sample(x + 0.0001 * norma, norma);
-        float pdf = distribution->pdf(x + 0.0001 * norma, norma, d);
-        Ray dRay = Ray(x + 0.0001 * d, d);
         if (d.dot(norma) < 0) {
             return figurePtr->emission;
         }
+        float pdf = distribution->pdf(x + 0.0001 * norma, norma, d);
+        Ray dRay = Ray(x + 0.0001 * d, d);
         return figurePtr->emission + 1. / (PI * pdf) * d.dot(norma) * figurePtr->color * getColor(dRay, recLimit - 1);
     } else if (figurePtr->material == Material::METALLIC) {
         Vec3 reflectedDir = ray.d.normalize() - 2. * norma.dot(ray.d.normalize()) * norma;

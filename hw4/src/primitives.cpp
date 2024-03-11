@@ -5,6 +5,8 @@ Figure::Figure() {};
 
 Figure::Figure(FigureType type, Vec3 data): type(type), data(data) {};
 
+static const float T_MAX = 1e4;
+
 std::optional<Intersection> Figure::intersect(const Ray &ray) const {
     Ray transformed = (ray - position).rotate(rotation);
 
@@ -69,7 +71,7 @@ std::optional<Intersection> Figure::intersectAsEllipsoid(const Ray &ray) const {
 std::optional<Intersection> Figure::intersectAsPlane(const Ray &ray) const {
     Vec3 n = data;
     float t = -ray.o.dot(n) / ray.d.dot(n);
-    if (t > 0) {
+    if (t > 0 && t < T_MAX) {
         if (ray.d.dot(n) > 0) {
             return {Intersection {t, -1. * n, true}};
         }
