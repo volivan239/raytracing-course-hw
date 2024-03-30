@@ -146,7 +146,7 @@ std::optional<Intersection> Figure::intersectAsTriangle(const Ray &ray) const {
         return {};
     }
     auto t = intersection.value().t;
-    Vec3 p = ray.o + t * ray.d;
+    Vec3 p = ray.o - a + t * ray.d;
     if (b.cross(p).dot(n) < 0) {
         return {};
     }
