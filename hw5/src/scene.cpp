@@ -8,6 +8,25 @@ std::uniform_real_distribution<float> u01(0.0, 1.0);
 Scene::Scene() {}
 
 void Scene::initDistribution() {
+    // std::vector<std::unique_ptr<Distribution>> lightDistributions;
+    // for (const auto &figure: figures) {
+    //     if (figure.emission.x > 0 || figure.emission.y > 0 || figure.emission.z > 0) {
+    //         if (figure.type == FigureType::BOX) {
+    //             lightDistributions.push_back(std::unique_ptr<Distribution>(new BoxLight(figure)));
+    //         } else if (figure.type == FigureType::ELLIPSOID) {
+    //             lightDistributions.push_back(std::unique_ptr<Distribution>(new EllipsoidLight(figure)));
+    //         } else if (figure.type == FigureType::TRIANGLE) {
+    //             lightDistributions.push_back(std::unique_ptr<Distribution>(new TriangleLight(figure)));
+    //         }
+    //     }
+    // }
+    // std::vector<std::unique_ptr<Distribution>> finalDistributions;
+    // finalDistributions.push_back(std::unique_ptr<Distribution>(new Cosine()));
+    // if (!lightDistributions.empty()) {
+    //     auto lightDistribution = std::unique_ptr<Distribution>(new Mix(std::move(lightDistributions)));
+    //     finalDistributions.push_back(std::move(lightDistribution));
+    // }
+    // distribution = std::unique_ptr<Mix>(new Mix(std::move(finalDistributions)));
     auto lightDistribution = std::make_unique<FiguresMix>(figures);
     std::vector<std::unique_ptr<Distribution>> finalDistributions;
     finalDistributions.push_back(std::make_unique<Cosine>());
@@ -55,20 +74,20 @@ Color Scene::getColor(rng_type &rng, const Ray &ray, int recLimit) const {
     auto x = ray.o + t * ray.d;
 
     if (figurePtr->material == Material::DIFFUSE) {
-        Vec3 d = distribution->sample(rng, x + 0.0001 * norma, norma);
+        Vec3 d = distribution->sample(rng, x + 0.000001 * norma, norma);
         if (d.dot(norma) < 0) {
             return figurePtr->emission;
         }
-        float pdf = distribution->pdf(x + 0.0001 * norma, norma, d);
-        Ray dRay = Ray(x + 0.0001 * d, d);
+        float pdf = distribution->pdf(x + 0.000001 * norma, norma, d);
+        Ray dRay = Ray(x + 0.000001 * d, d);
         return figurePtr->emission + 1. / (PI * pdf) * d.dot(norma) * figurePtr->color * getColor(rng, dRay, recLimit - 1);
     } else if (figurePtr->material == Material::METALLIC) {
         Vec3 reflectedDir = ray.d.normalize() - 2. * norma.dot(ray.d.normalize()) * norma;
-        Ray reflected = Ray(ray.o + t * ray.d + 0.0001 * reflectedDir, reflectedDir);
+        Ray reflected = Ray(ray.o + t * ray.d + 0.000001 * reflectedDir, reflectedDir);
         return figurePtr->emission + figurePtr->color * getColor(rng, reflected, recLimit - 1);
     } else {
         Vec3 reflectedDir = ray.d.normalize() - 2. * norma.dot(ray.d.normalize()) * norma;
-        Ray reflected = Ray(ray.o + t * ray.d + 0.0001 * reflectedDir, reflectedDir);
+        Ray reflected = Ray(ray.o + t * ray.d + 0.000001 * reflectedDir, reflectedDir);
         Color reflectedColor = getColor(rng, reflected, recLimit - 1);
 
         float eta1 = 1., eta2 = figurePtr->ior;
@@ -90,7 +109,7 @@ Color Scene::getColor(rng_type &rng, const Ray &ray, int recLimit) const {
 
         float cosTheta2 = sqrt(1 - sinTheta2 * sinTheta2);
         Vec3 refractedDir = eta1 / eta2 * (-1. * l) + (eta1 / eta2 * norma.dot(l) - cosTheta2) * norma;
-        Ray refracted = Ray(ray.o + t * ray.d + 0.0001 * refractedDir, refractedDir);
+        Ray refracted = Ray(ray.o + t * ray.d + 0.000001 * refractedDir, refractedDir);
         Color refractedColor = getColor(rng, refracted, recLimit - 1);
         if (!is_inside) {
             refractedColor = refractedColor * figurePtr->color;
