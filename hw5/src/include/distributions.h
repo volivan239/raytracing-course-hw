@@ -100,12 +100,12 @@ public:
             return ans;
         }
 
-        auto secondIntersection = figure.intersect(Ray(x + (t + 0.000001) * d, d));
+        auto secondIntersection = figure.intersect(Ray(x + (t + 0.0001) * d, d));
         if (!secondIntersection.has_value()) {
             return ans;
         }
         auto [t2, yn2, __] = secondIntersection.value();
-        Vec3 y2 = x + (t + 0.000001 + t2) * d;
+        Vec3 y2 = x + (t + 0.0001 + t2) * d;
         return ans + pdfOne(x, d, y2, yn2);
     }
 };
