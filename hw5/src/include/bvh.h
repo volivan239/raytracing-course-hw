@@ -4,6 +4,7 @@
 #include "primitives.h"
 #include "quaternion.h"
 #include <cassert>
+#include <iostream>
 
 class Node {
 public:
@@ -114,8 +115,8 @@ private:
         if (!intersection.has_value()) {
             return {};
         }
-        float t = intersection.value().t;
-        if (curBest.has_value() && curBest.value() < t) {
+        auto [t, _, is_inside] = intersection.value();
+        if (curBest.has_value() && curBest.value() < t && !is_inside) {
             return {};
         }
 

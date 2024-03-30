@@ -96,6 +96,10 @@ public:
         Vec3 y = x + t * d;
         float ans = pdfOne(x, d, y, yn);
 
+        if (figure.type == FigureType::TRIANGLE) {
+            return ans;
+        }
+
         auto secondIntersection = figure.intersect(Ray(x + (t + 0.0001) * d, d));
         if (!secondIntersection.has_value()) {
             return ans;

@@ -9,42 +9,26 @@ const int SAMPLES_DROP = 4;
 
 std::pair<Figure, std::optional<std::string>> loadPrimitive(std::istream &in) {
     std::string cmdLine;
-
-    getline(in, cmdLine);
     Figure figure;
-    std::stringstream ss;
-    ss << cmdLine;
-    std::string figureName;
-    ss >> figureName;
-
-    if (figureName == "ELLIPSOID") {
-        Vec3 r;
-        ss >> r;
-        figure = Figure(FigureType::ELLIPSOID, r);
-    } else if (figureName == "PLANE") {
-        Vec3 n;
-        ss >> n;
-        figure = Figure(FigureType::PLANE, n.normalize());
-    } else if (figureName == "BOX") {
-        Vec3 s;
-        ss >> s;
-        figure = Figure(FigureType::BOX, s);
-    } else if (figureName == "TRIANGLE") {
-        Vec3 a, b, c;
-        ss >> a >> b >> c;
-        figure = Figure(FigureType::TRIANGLE, c, b, a);
-    } else {
-        std::cerr << "UNKNWOWN FIGURE: " << figureName << '@' << cmdLine << std::endl;
-        return std::make_pair(figure, cmdLine);
-    }
-
     while (getline(in, cmdLine)) {
         std::string cmd;
 
         std::stringstream ss;
         ss << cmdLine;
         ss >> cmd;
-        if (cmd == "COLOR") {
+        if (cmd == "ELLIPSOID") {
+            ss >> figure.data;
+            figure.type = FigureType::ELLIPSOID;
+        } else if (cmd == "PLANE") {
+            ss >> figure.data;
+            figure.type = FigureType::PLANE;
+        } else if (cmd == "BOX") {
+            ss >> figure.data;
+            figure.type = FigureType::BOX;
+        } else if (cmd == "TRIANGLE") {
+            ss >> figure.data3 >> figure.data2 >> figure.data;
+            figure.type = FigureType::TRIANGLE;
+        } else if (cmd == "COLOR") {
             ss >> figure.color;
         } else if (cmd == "POSITION") {
             ss >> figure.position;
