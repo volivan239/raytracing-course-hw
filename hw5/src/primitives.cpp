@@ -6,7 +6,7 @@ Figure::Figure() {};
 
 Figure::Figure(FigureType type, Vec3 data): type(type), data(data) {};
 
-Figure::Figure(FigureType type, Vec3 data, Vec3 data2): type(type), data(data), data2(data2) {};
+Figure::Figure(FigureType type, Vec3 data, Vec3 data2, Vec3 data3): type(type), data(data), data2(data2), data3(data3) {};
 
 static const float T_MAX = 1e4;
 
@@ -137,10 +137,11 @@ std::optional<Intersection> Figure::intersectAsBox(const Ray &ray) const {
 }   
 
 std::optional<Intersection> Figure::intersectAsTriangle(const Ray &ray) const {
-    const Vec3 &b = data;
-    const Vec3 &c = data2;
+    const Vec3 &a = data3;
+    const Vec3 &b = data - a;
+    const Vec3 &c = data2 - a;
     Vec3 n = b.cross(c);
-    auto intersection = intersectPlaneAndRay(n, ray);
+    auto intersection = intersectPlaneAndRay(n, ray - a);
     if (!intersection.has_value()) {
         return {};
     }
@@ -167,14 +168,14 @@ AABB::AABB(const Figure &fig) {
         max = fig.data;
     } else if (fig.type == FigureType::TRIANGLE) {
         min = Vec3(
-            std::min(0.f, std::min(fig.data.x, fig.data2.x)),
-            std::min(0.f, std::min(fig.data.y, fig.data2.y)),
-            std::min(0.f, std::min(fig.data.z, fig.data2.z))
+            std::min(fig.data3.x, std::min(fig.data.x, fig.data2.x)),
+            std::min(fig.data3.y, std::min(fig.data.y, fig.data2.y)),
+            std::min(fig.data3.z, std::min(fig.data.z, fig.data2.z))
         );
         max = Vec3(
-            std::max(0.f, std::max(fig.data.x, fig.data2.x)),
-            std::max(0.f, std::max(fig.data.y, fig.data2.y)),
-            std::max(0.f, std::max(fig.data.z, fig.data2.z))
+            std::max(fig.data3.x, std::max(fig.data.x, fig.data2.x)),
+            std::max(fig.data3.y, std::max(fig.data.y, fig.data2.y)),
+            std::max(fig.data3.z, std::max(fig.data.z, fig.data2.z))
         );
     } else {
         assert(false);

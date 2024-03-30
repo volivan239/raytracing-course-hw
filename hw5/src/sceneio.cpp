@@ -5,7 +5,7 @@
 
 namespace sceneio {
 
-const int SAMPLES_DROP = 8;
+const int SAMPLES_DROP = 4;
 
 std::pair<Figure, std::optional<std::string>> loadPrimitive(std::istream &in) {
     std::string cmdLine;
@@ -32,8 +32,7 @@ std::pair<Figure, std::optional<std::string>> loadPrimitive(std::istream &in) {
     } else if (figureName == "TRIANGLE") {
         Vec3 a, b, c;
         ss >> a >> b >> c;
-        figure = Figure(FigureType::TRIANGLE, c - a, b - a);
-        figure.position = a;
+        figure = Figure(FigureType::TRIANGLE, c, b, a);
     } else {
         std::cerr << "UNKNWOWN FIGURE: " << figureName << '@' << cmdLine << std::endl;
         return std::make_pair(figure, cmdLine);
@@ -48,9 +47,7 @@ std::pair<Figure, std::optional<std::string>> loadPrimitive(std::istream &in) {
         if (cmd == "COLOR") {
             ss >> figure.color;
         } else if (cmd == "POSITION") {
-            Vec3 position;
-            ss >> position;
-            figure.position = figure.position + position;
+            ss >> figure.position;
         } else if (cmd == "ROTATION") {
             ss >> figure.rotation;
         } else if (cmd == "METALLIC") {

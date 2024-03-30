@@ -46,10 +46,11 @@ public:
     FigureType type;
     Vec3 data;
     Vec3 data2;
+    Vec3 data3;
 
     Figure();
     Figure(FigureType type, Vec3 data);
-    Figure(FigureType type, Vec3 data, Vec3 data2);
+    Figure(FigureType type, Vec3 data, Vec3 data2, Vec3 data3);
 
     std::optional<Intersection> intersect(const Ray &ray) const;
 };

@@ -155,8 +155,9 @@ private:
     std::uniform_real_distribution<float> u01{0.f, 1.f};
     
     float pdfOne(Vec3 x, Vec3 d, Vec3 y, Vec3 yn) const override {
-        const Vec3 &b = figure.data;
-        const Vec3 &c = figure.data2;
+        const Vec3 &a = figure.data3;
+        const Vec3 &b = figure.data - a;
+        const Vec3 &c = figure.data2 - a;
         Vec3 n = b.cross(c);
         float pointProb = 1.0 / (0.5 * n.len());
         return pointProb * (x - y).len2() / fabs(d.dot(yn));
@@ -167,15 +168,16 @@ public:
 
     Vec3 sample(rng_type &rng, Vec3 x, Vec3 n) override {
         (void) n;
-        const Vec3 &b = figure.data;
-        const Vec3 &c = figure.data2;
+        const Vec3 &a = figure.data3;
+        const Vec3 &b = figure.data - a;
+        const Vec3 &c = figure.data2 - a;
         float u = u01(rng);
         float v = u01(rng);
         if (u + v > 1.) {
             u = 1 - u;
             v = 1 - v;
         }
-        Vec3 point = figure.position + figure.rotation.conjugate().transform(u * b + v * c);
+        Vec3 point = figure.position + figure.rotation.conjugate().transform(a + u * b + v * c);
         return (point - x).normalize();
     }
 };
