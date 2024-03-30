@@ -134,7 +134,7 @@ std::optional<Intersection> intersectBoxAndRay(const Vec3 &s, const Ray &ray) {
 
 std::optional<Intersection> Figure::intersectAsBox(const Ray &ray) const {
     return intersectBoxAndRay(data, ray);
-}
+}   
 
 std::optional<Intersection> Figure::intersectAsTriangle(const Ray &ray) const {
     const Vec3 &b = data;
