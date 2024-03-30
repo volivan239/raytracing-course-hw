@@ -129,13 +129,13 @@ void renderScene(const Scene &scene, std::ostream &out) {
         int x = i % scene.width;
         int y = i / scene.width;
         auto pixel0 = scene.getPixel(rng, x, y);
-        result[x][y] = toExternColorFormat(
+        result[y][x] = toExternColorFormat(
             gamma_corrected(aces_tonemap(pixel0))
         );
     }
     for (int y = 0; y < scene.height; y++) {
         for (int x = 0; x < scene.width; x++) {
-            out.write(reinterpret_cast<char*>(result[x][y].data()), 3);
+            out.write(reinterpret_cast<char*>(result[y][x].data()), 3);
         }
     }
 }
