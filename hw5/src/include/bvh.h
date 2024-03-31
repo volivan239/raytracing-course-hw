@@ -58,11 +58,10 @@ private:
     };
 
     void halfSplit(std::vector<Figure> &figures, uint32_t first, uint32_t last, Axis axis) const {
-        uint32_t halfSize = (last - first) / 2;
         auto cmp = axis == Axis::X ? [](const Figure &lhs, const Figure &rhs) { return lhs.position.x < rhs.position.x; } : 
                   (axis == Axis::Y ? [](const Figure &lhs, const Figure &rhs) { return lhs.position.y < rhs.position.y; } : 
                                      [](const Figure &lhs, const Figure &rhs) { return lhs.position.z < rhs.position.z; });
-        std::nth_element(figures.begin() + first, figures.begin() + halfSize, figures.begin() + last, cmp);
+        std::sort(figures.begin() + first, figures.begin() + last, cmp);
     }
 
     uint32_t buildNode(std::vector<Figure> &figures, uint32_t first, uint32_t last) {
