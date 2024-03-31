@@ -6,7 +6,7 @@
 #include "quaternion.h"
 #include "material.h"
 
-const long double eps = 1e-3;
+const long double eps = 1e-4;
 
 class Ray {
 public:
