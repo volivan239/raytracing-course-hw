@@ -3,18 +3,16 @@
 #include <random>
 #include <algorithm>
 
-std::uniform_real_distribution<float> u01(0.0, 1.0);
-
 Scene::Scene() {}
 
 void Scene::initDistribution() {
-    auto lightDistribution = std::make_unique<FiguresMix>(figures);
-    std::vector<std::unique_ptr<Distribution>> finalDistributions;
-    finalDistributions.push_back(std::make_unique<Cosine>());
-    if (!lightDistribution->isEmpty()) {
-        finalDistributions.push_back(std::move(lightDistribution));
+    auto lightDistribution = FiguresMix(figures);
+    std::vector<std::variant<Cosine, FiguresMix>> finalDistributions;
+    finalDistributions.push_back(Cosine());
+    if (!lightDistribution.isEmpty()) {
+        finalDistributions.push_back(lightDistribution);
     }
-    distribution = std::make_unique<Mix>(std::move(finalDistributions));
+    distribution = Mix(finalDistributions);
 }
 
 void Scene::initBVH() {
@@ -25,7 +23,7 @@ void Scene::initBVH() {
 }
 
 std::optional<std::pair<Intersection, int>> Scene::intersect(const Ray &ray) const {
-    std::optional<std::pair<Intersection, int>> bestIntersection = bvh.intersect(figures, ray);
+    std::optional<std::pair<Intersection, int>> bestIntersection = {};
     for (int i = nonPlanes; i < (int) figures.size(); i++) {
         auto intersection_ = figures[i].intersect(ray);
         if (intersection_.has_value()) {
@@ -35,11 +33,18 @@ std::optional<std::pair<Intersection, int>> Scene::intersect(const Ray &ray) con
             }
         }
     }
-
+    std::optional<float> curBest = {};
+    if (bestIntersection.has_value()) {
+        curBest = bestIntersection.value().first.t;
+    }
+    auto bvhIntersection = bvh.intersect(figures, ray, curBest);
+    if (bvhIntersection.has_value() && (!bestIntersection.has_value() || bvhIntersection.value().first.t < bestIntersection.value().first.t)) {
+        bestIntersection = bvhIntersection;
+    }
     return bestIntersection;
 }
 
-Color Scene::getColor(rng_type &rng, const Ray &ray, int recLimit) const {
+Color Scene::getColor(std::uniform_real_distribution<float> &u01, std::normal_distribution<float> &n01, rng_type &rng, const Ray &ray, int recLimit) {
     if (recLimit == 0) {
         return {0., 0., 0.};
     }
@@ -55,21 +60,21 @@ Color Scene::getColor(rng_type &rng, const Ray &ray, int recLimit) const {
     auto x = ray.o + t * ray.d;
 
     if (figurePtr->material == Material::DIFFUSE) {
-        Vec3 d = distribution->sample(rng, x + 0.0001 * norma, norma);
+        Vec3 d = distribution.sample(u01, n01, rng, x + 0.0001 * norma, norma);
         if (d.dot(norma) < 0) {
             return figurePtr->emission;
         }
-        float pdf = distribution->pdf(x + 0.0001 * norma, norma, d);
+        float pdf = distribution.pdf(x + 0.0001 * norma, norma, d);
         Ray dRay = Ray(x + 0.0001 * d, d);
-        return figurePtr->emission + 1. / (PI * pdf) * d.dot(norma) * figurePtr->color * getColor(rng, dRay, recLimit - 1);
+        return figurePtr->emission + 1. / (PI * pdf) * d.dot(norma) * figurePtr->color * getColor(u01, n01, rng, dRay, recLimit - 1);
     } else if (figurePtr->material == Material::METALLIC) {
         Vec3 reflectedDir = ray.d.normalize() - 2. * norma.dot(ray.d.normalize()) * norma;
         Ray reflected = Ray(ray.o + t * ray.d + 0.0001 * reflectedDir, reflectedDir);
-        return figurePtr->emission + figurePtr->color * getColor(rng, reflected, recLimit - 1);
+        return figurePtr->emission + figurePtr->color * getColor(u01, n01, rng, reflected, recLimit - 1);
     } else {
         Vec3 reflectedDir = ray.d.normalize() - 2. * norma.dot(ray.d.normalize()) * norma;
         Ray reflected = Ray(ray.o + t * ray.d + 0.0001 * reflectedDir, reflectedDir);
-        Color reflectedColor = getColor(rng, reflected, recLimit - 1);
+        Color reflectedColor = getColor(u01, n01, rng, reflected, recLimit - 1);
 
         float eta1 = 1., eta2 = figurePtr->ior;
         if (is_inside) {
@@ -91,7 +96,7 @@ Color Scene::getColor(rng_type &rng, const Ray &ray, int recLimit) const {
         float cosTheta2 = sqrt(1 - sinTheta2 * sinTheta2);
         Vec3 refractedDir = eta1 / eta2 * (-1. * l) + (eta1 / eta2 * norma.dot(l) - cosTheta2) * norma;
         Ray refracted = Ray(ray.o + t * ray.d + 0.0001 * refractedDir, refractedDir);
-        Color refractedColor = getColor(rng, refracted, recLimit - 1);
+        Color refractedColor = getColor(u01, n01, rng, refracted, recLimit - 1);
         if (!is_inside) {
             refractedColor = refractedColor * figurePtr->color;
         }
@@ -99,12 +104,14 @@ Color Scene::getColor(rng_type &rng, const Ray &ray, int recLimit) const {
     }
 }
 
-Color Scene::getPixel(rng_type &rng, int x, int y) const {
+Color Scene::getPixel(rng_type &rng, int x, int y) {
+    std::uniform_real_distribution<float> u01(0.0, 1.0);
+    std::normal_distribution<float> n01(0.0, 1.0);
     Color color {0, 0, 0};
     for (int _ = 0; _ < samples; _++) {
         float nx = x + u01(rng);
         float ny = y + u01(rng);
-        color = color + getColor(rng, getCameraRay(nx, ny), rayDepth);
+        color = color + getColor(u01, n01, rng, getCameraRay(nx, ny), rayDepth);
     }
     return 1.0 / samples * color;
 }

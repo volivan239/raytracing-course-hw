@@ -26,8 +26,8 @@ public:
         root = buildNode(figures, 0, n);
     }
 
-    std::optional<std::pair<Intersection, int>> intersect(const std::vector<Figure> &figures, const Ray &ray) const {
-        return intersect_(figures, root, ray, {});
+    std::optional<std::pair<Intersection, int>> intersect(const std::vector<Figure> &figures, const Ray &ray, std::optional<float> curBest) const {
+        return intersect_(figures, root, ray, curBest);
     }
 
 private:
@@ -111,14 +111,6 @@ private:
 
     std::optional<std::pair<Intersection, int>> intersect_(const std::vector<Figure> &figures, uint32_t pos, const Ray &ray, std::optional<float> curBest) const {
         const Node &cur = nodes[pos];
-        auto intersection = cur.aabb.intersect(ray);
-        if (!intersection.has_value()) {
-            return {};
-        }
-        auto [t, _, is_inside] = intersection.value();
-        if (curBest.has_value() && curBest.value() < t && !is_inside) {
-            return {};
-        }
 
         std::optional<std::pair<Intersection, int>> bestIntersection = {};
         if (cur.left == 0) {
@@ -131,13 +123,32 @@ private:
             return bestIntersection;
         }
 
-        auto leftIntersection = intersect_(figures, cur.left, ray, curBest);
+        auto leftIntersection0 = nodes[cur.left].aabb.intersect(ray);
+        if (!leftIntersection0.has_value()) {
+            return intersect_(figures, cur.right, ray, curBest);
+        }
+        auto [lt, _, lIsInside] = leftIntersection0.value();
+
+        auto rightIntersection0 = nodes[cur.right].aabb.intersect(ray);
+        if (!rightIntersection0.has_value()) {
+            return intersect_(figures, cur.left, ray, curBest);
+        }
+        auto [rt, __, rIsInside] = rightIntersection0.value();
+
+        int left = cur.left, right = cur.right;
+        if (rIsInside || (!lIsInside && rt < lt)) {
+            std::swap(left, right);
+            std::swap(lt, rt);
+            std::swap(lIsInside, rIsInside);
+        }
+
+        auto leftIntersection = (curBest.has_value() && !lIsInside && curBest.value() < lt) ? std::nullopt : intersect_(figures, left, ray, curBest);
         bestIntersection = leftIntersection;
         if (leftIntersection.has_value() && (!curBest.has_value() || leftIntersection.value().first.t < curBest.value())) {
             curBest = leftIntersection.value().first.t;
         }
 
-        auto rightIntersection = intersect_(figures, cur.right, ray, curBest);
+        auto rightIntersection = (curBest.has_value() && !rIsInside && curBest.value() < rt) ? std::nullopt : intersect_(figures, right, ray, curBest);
         if (rightIntersection.has_value() && (!bestIntersection.has_value() || rightIntersection.value().first.t < bestIntersection.value().first.t)) {
             bestIntersection = rightIntersection;
         }

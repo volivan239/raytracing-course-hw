@@ -4,7 +4,7 @@
 
 namespace sceneio {
 
-void renderScene(const Scene &scene, std::ostream &out);
+void renderScene(Scene &scene, std::ostream &out);
 Scene loadScene(std::istream &in);
 
 }

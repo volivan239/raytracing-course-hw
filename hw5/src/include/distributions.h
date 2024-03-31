@@ -11,21 +11,11 @@ typedef std::minstd_rand rng_type;
 const float PI = acos(-1);
 
 
-class Distribution {
-public:
-    virtual Vec3 sample(rng_type &rng, Vec3 x, Vec3 n) = 0;
-    virtual float pdf(Vec3 x, Vec3 n, Vec3 d) const = 0;
-};
-
-
-class Uniform : public Distribution {
-private:
-    std::normal_distribution<float> n01{0.f, 1.f};
-
+class Uniform {
 public:
     Uniform() {}
 
-    Vec3 sample(rng_type &rng, Vec3 x, Vec3 n) override {
+    Vec3 sample(std::normal_distribution<float> &n01, rng_type &rng, Vec3 x, Vec3 n) {
         (void) x;
         Vec3 d = Vec3 {n01(rng), n01(rng), n01(rng)}.normalize();
         if (d.dot(n) < 0) {
@@ -34,7 +24,7 @@ public:
         return d;
     }
 
-    float pdf(Vec3 x, Vec3 n, Vec3 d) const override {
+    float pdf(Vec3 x, Vec3 n, Vec3 d) const {
         (void) x;
         if (d.dot(n) < 0) {
             return 0;
@@ -44,15 +34,14 @@ public:
 };
 
 
-class Cosine : public Distribution {
+class Cosine {
 private:
-    std::normal_distribution<float> n01{0.f, 1.f};
     static constexpr float eps = 1e-9;
 
 public:
     Cosine() {}
 
-    Vec3 sample(rng_type &rng, Vec3 x, Vec3 n) override {
+    Vec3 sample(std::normal_distribution<float> &n01, rng_type &rng, Vec3 x, Vec3 n) {
         (void) x;
         Vec3 d = Vec3 {n01(rng), n01(rng), n01(rng)}.normalize();
         d = d + n;
@@ -66,66 +55,31 @@ public:
         return 1. / len * d;
     }
 
-    float pdf(Vec3 x, Vec3 n, Vec3 d) const override {
+    float pdf(Vec3 x, Vec3 n, Vec3 d) const {
         (void) x;
         return std::max(0.f, d.dot(n) / PI);
     }
 };
 
-class FigureLight : public Distribution {
+class BoxLight {
 private:
-    virtual float pdfOne(Vec3 x, Vec3 d, Vec3 y, Vec3 yn) const = 0;
+    float sTotal;
 
 public:
     const Figure figure;
-
-public:
-    FigureLight(const Figure &figure): figure(figure) {}
-
-    float pdf(Vec3 x, Vec3 n, Vec3 d) const override {
-        (void) n;
-
-        auto firstIntersection = figure.intersect(Ray(x, d));
-        if (!firstIntersection.has_value()) {
-            return 0.;
-        }
-        auto [t, yn, _] = firstIntersection.value();
-        if (std::isnan(t)) { // Shouldn't happen actually...
-            return INFINITY;
-        }
-        Vec3 y = x + t * d;
-        float ans = pdfOne(x, d, y, yn);
-
-        if (figure.type == FigureType::TRIANGLE) {
-            return ans;
-        }
-
-        auto secondIntersection = figure.intersect(Ray(x + (t + 0.0001) * d, d));
-        if (!secondIntersection.has_value()) {
-            return ans;
-        }
-        auto [t2, yn2, __] = secondIntersection.value();
-        Vec3 y2 = x + (t + 0.0001 + t2) * d;
-        return ans + pdfOne(x, d, y2, yn2);
-    }
-};
-
-class BoxLight : public FigureLight {
-private:
-    std::uniform_real_distribution<float> u01{0.0, 1.0};
-    float sTotal;
     
-    float pdfOne(Vec3 x, Vec3 d, Vec3 y, Vec3 yn) const override {
+public:
+    float pdfOne(Vec3 x, Vec3 d, Vec3 y, Vec3 yn) const {
         return (x - y).len2() / (sTotal * fabs(d.dot(yn)));
     }
 
 public:
-    BoxLight(const Figure &box): FigureLight(box) {
+    BoxLight(const Figure &box): figure(box) {
         float sx = box.data.x, sy = box.data.y, sz = box.data.z;
         sTotal = 8 * (sy * sz + sx * sz + sx * sy);
     }
 
-    Vec3 sample(rng_type &rng, Vec3 x, Vec3 n) override {
+    Vec3 sample(std::uniform_real_distribution<float> &u01, rng_type &rng, Vec3 x, Vec3 n) {
         (void) n;
 
         float sx = figure.data.x, sy = figure.data.y, sz = figure.data.z;
@@ -154,23 +108,28 @@ public:
     }
 };
 
-class TriangleLight : public FigureLight {
+class TriangleLight {
 private:
-    std::uniform_real_distribution<float> u01{0.f, 1.f};
+    float pointProb;
+
+public:
+    const Figure figure;
     
-    float pdfOne(Vec3 x, Vec3 d, Vec3 y, Vec3 yn) const override {
-        const Vec3 &a = figure.data3;
-        const Vec3 &b = figure.data - a;
-        const Vec3 &c = figure.data2 - a;
-        Vec3 n = b.cross(c);
-        float pointProb = 1.0 / (0.5 * n.len());
+public:
+    float pdfOne(Vec3 x, Vec3 d, Vec3 y, Vec3 yn) const {
         return pointProb * (x - y).len2() / fabs(d.dot(yn));
     }
 
 public:
-    TriangleLight(const Figure &ellipsoid): FigureLight(ellipsoid) {}
+    TriangleLight(const Figure &ellipsoid): figure(ellipsoid) {
+        const Vec3 &a = figure.data3;
+        const Vec3 &b = figure.data - a;
+        const Vec3 &c = figure.data2 - a;
+        Vec3 n = b.cross(c);
+        pointProb = 1.0 / (0.5 * n.len());
+    }
 
-    Vec3 sample(rng_type &rng, Vec3 x, Vec3 n) override {
+    Vec3 sample(std::uniform_real_distribution<float> &u01, rng_type &rng, Vec3 x, Vec3 n) {
         (void) n;
         const Vec3 &a = figure.data3;
         const Vec3 &b = figure.data - a;
@@ -186,11 +145,15 @@ public:
     }
 };
 
-class EllipsoidLight : public FigureLight {
+class EllipsoidLight {
 private:
-    std::normal_distribution<float> n01{0.f, 1.f};
+    float pointProb;
+
+public:
+    const Figure figure;
     
-    float pdfOne(Vec3 x, Vec3 d, Vec3 y, Vec3 yn) const override {
+public:
+    float pdfOne(Vec3 x, Vec3 d, Vec3 y, Vec3 yn) const {
         Vec3 r = figure.data;
         Vec3 n = figure.rotation.transform(y - figure.position) / r;
         float pointProb = 1. / (4 * PI * Vec3{n.x * r.y * r.z, r.x * n.y * r.z, r.x * r.y * n.z}.len());
@@ -198,9 +161,9 @@ private:
     }
 
 public:
-    EllipsoidLight(const Figure &ellipsoid): FigureLight(ellipsoid) {}
+    EllipsoidLight(const Figure &ellipsoid): figure(ellipsoid) {}
 
-    Vec3 sample(rng_type &rng, Vec3 x, Vec3 n) override {
+    Vec3 sample(std::normal_distribution<float> &n01, rng_type &rng, Vec3 x, Vec3 n) {
         (void) n;
         Vec3 r = figure.data;
 
@@ -214,31 +177,8 @@ public:
     }
 };
 
-class Mix : public Distribution {
+class FiguresMix {
 private:
-    std::uniform_real_distribution<float> u01{0.0, 1.0};
-    const std::vector<std::unique_ptr<Distribution>> components;
-
-public:
-    Mix(std::vector<std::unique_ptr<Distribution>> &&components): components(std::move(components)) {}
-
-    Vec3 sample(rng_type &rng, Vec3 x, Vec3 n) override {
-        int distNum = u01(rng) * components.size();
-        return components[distNum]->sample(rng, x, n);
-    }
-
-    float pdf(Vec3 x, Vec3 n, Vec3 d) const override {
-        float ans = 0;
-        for (const auto &component : components) {
-            ans += component->pdf(x, n, d);
-        }
-        return ans / components.size();
-    }
-};
-
-class FiguresMix : public Distribution {
-private:
-    std::uniform_real_distribution<float> u01{0.0, 1.0};
     std::vector<std::variant<BoxLight, EllipsoidLight, TriangleLight>> figures_;
     BVH bvh;
 
@@ -263,18 +203,18 @@ public:
         }
     }
 
-    Vec3 sample(rng_type &rng, Vec3 x, Vec3 n) override {
+    Vec3 sample(std::uniform_real_distribution<float> &u01, std::normal_distribution<float> &n01, rng_type &rng, Vec3 x, Vec3 n) {
         int distNum = u01(rng) * figures_.size();
         if (std::holds_alternative<BoxLight>(figures_[distNum])) {
-            return std::get<BoxLight>(figures_[distNum]).sample(rng, x, n);
+            return std::get<BoxLight>(figures_[distNum]).sample(u01, rng, x, n);
         } else if (std::holds_alternative<EllipsoidLight>(figures_[distNum])) {
-            return std::get<EllipsoidLight>(figures_[distNum]).sample(rng, x, n);
+            return std::get<EllipsoidLight>(figures_[distNum]).sample(n01, rng, x, n);
         } else {
-            return std::get<TriangleLight>(figures_[distNum]).sample(rng, x, n);
+            return std::get<TriangleLight>(figures_[distNum]).sample(u01, rng, x, n);
         }
     }
 
-    float pdf(Vec3 x, Vec3 n, Vec3 d) const override {
+    float pdf(Vec3 x, Vec3 n, Vec3 d) const {
         return getTotalPdf(0, x, n, d) / figures_.size();
     }
 
@@ -283,6 +223,41 @@ public:
     }
 
 private:
+    float pdfOneFigureLight(const std::variant<BoxLight, EllipsoidLight, TriangleLight> &figureLight, Vec3 x, Vec3 n, Vec3 d) const {
+        (void) n;
+
+        const Figure &figure = std::holds_alternative<BoxLight>(figureLight) ? std::get<BoxLight>(figureLight).figure :
+                               (std::holds_alternative<EllipsoidLight>(figureLight) ? std::get<EllipsoidLight>(figureLight).figure :
+                               std::get<TriangleLight>(figureLight).figure);
+
+        auto firstIntersection = figure.intersect(Ray(x, d));
+        if (!firstIntersection.has_value()) {
+            return 0.;
+        }
+        auto [t, yn, _] = firstIntersection.value();
+        if (std::isnan(t)) { // Shouldn't happen actually...
+            return INFINITY;
+        }
+        Vec3 y = x + t * d;
+        float ans = std::holds_alternative<BoxLight>(figureLight) ? std::get<BoxLight>(figureLight).pdfOne(x, d, y, yn) :
+                    (std::holds_alternative<EllipsoidLight>(figureLight) ? std::get<EllipsoidLight>(figureLight).pdfOne(x, d, y, yn) :
+                    std::get<TriangleLight>(figureLight).pdfOne(x, d, y, yn));
+
+        if (figure.type == FigureType::TRIANGLE) {
+            return ans;
+        }
+
+        auto secondIntersection = figure.intersect(Ray(x + (t + 0.0001) * d, d));
+        if (!secondIntersection.has_value()) {
+            return ans;
+        }
+        auto [t2, yn2, __] = secondIntersection.value();
+        Vec3 y2 = x + (t + 0.0001 + t2) * d;
+        return ans + (std::holds_alternative<BoxLight>(figureLight) ? std::get<BoxLight>(figureLight).pdfOne(x, d, y2, yn2) :
+                    (std::holds_alternative<EllipsoidLight>(figureLight) ? std::get<EllipsoidLight>(figureLight).pdfOne(x, d, y2, yn2) :
+                    std::get<TriangleLight>(figureLight).pdfOne(x, d, y2, yn2)));
+    }
+
     float getTotalPdf(uint32_t pos, const Vec3 &x, const Vec3 &n, const Vec3 &d) const {
         Ray ray(x, d);
         const Node &cur = bvh.nodes[pos];
@@ -294,17 +269,41 @@ private:
         if (cur.left == 0) {
             float result = 0;
             for (uint32_t i = cur.first; i < cur.last; i++) {
-                if (std::holds_alternative<BoxLight>(figures_[i])) {
-                    result += std::get<BoxLight>(figures_[i]).pdf(x, n, d);
-                } else if (std::holds_alternative<EllipsoidLight>(figures_[i])) {
-                    result += std::get<EllipsoidLight>(figures_[i]).pdf(x, n, d);
-                } else {
-                    result += std::get<TriangleLight>(figures_[i]).pdf(x, n, d);
-                }
+                result += pdfOneFigureLight(figures_[i], x, n, d);
             }
             return result;
         }
 
         return getTotalPdf(cur.left, x, n, d) + getTotalPdf(cur.right, x, n, d);
     }    
+};
+
+class Mix {
+private:
+    std::vector<std::variant<Cosine, FiguresMix>> components;
+
+public:
+    Mix() {}
+    Mix(const std::vector<std::variant<Cosine, FiguresMix>> &components): components(components) {}
+
+    Vec3 sample(std::uniform_real_distribution<float> &u01, std::normal_distribution<float> &n01, rng_type &rng, Vec3 x, Vec3 n) {
+        int distNum = u01(rng) * components.size();
+        if (std::holds_alternative<Cosine>(components[distNum])) {
+            return std::get<Cosine>(components[distNum]).sample(n01, rng, x, n);
+        } else {
+            return std::get<FiguresMix>(components[distNum]).sample(u01, n01, rng, x, n);
+        }
+    }
+
+    float pdf(Vec3 x, Vec3 n, Vec3 d) const {
+        float ans = 0;
+        for (const auto &component : components) {
+            if (std::holds_alternative<Cosine>(component)) {
+                ans += std::get<Cosine>(component).pdf(x, n, d);
+            } else {
+                ans += std::get<FiguresMix>(component).pdf(x, n, d);
+            }
+        }
+        return ans / components.size();
+    }
 };

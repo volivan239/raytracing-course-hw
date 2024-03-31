@@ -99,7 +99,7 @@ Scene loadScene(std::istream &in) {
     return scene;
 }
 
-void renderScene(const Scene &scene, std::ostream &out) {
+void renderScene(Scene &scene, std::ostream &out) {
     out << "P6\n";
     out << scene.width << ' ' << scene.height << '\n';
     out << 255 << '\n';

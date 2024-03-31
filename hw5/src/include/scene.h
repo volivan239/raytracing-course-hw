@@ -13,12 +13,12 @@ typedef std::minstd_rand rng_type;
 
 class Scene {
 private:
-    std::unique_ptr<Mix> distribution;
+    Mix distribution;
     int nonPlanes;
 
     Ray getCameraRay(float x, float y) const;
     std::optional<std::pair<Intersection, int>> intersect(const Ray &ray) const;
-    Color getColor(rng_type &rng, const Ray &ray, int recLimit) const;
+    Color getColor(std::uniform_real_distribution<float> &u01, std::normal_distribution<float> &n01, rng_type &rng, const Ray &ray, int recLimit);
 
 public:
     int samples;
@@ -32,7 +32,7 @@ public:
 
     Scene();
 
-    Color getPixel(rng_type &rng, int x, int y) const;
+    Color getPixel(rng_type &rng, int x, int y);
     void initDistribution();
     void initBVH();
 };

@@ -89,7 +89,7 @@ std::optional<Intersection> Figure::intersectAsPlane(const Ray &ray) const {
     return intersectPlaneAndRay(data, ray);
 }
 
-std::optional<Intersection> intersectBoxAndRay(const Vec3 &s, const Ray &ray) {
+std::optional<Intersection> intersectBoxAndRay(const Vec3 &s, const Ray &ray, bool require_norma = true) {
     Vec3 ts1 = (-1. * s - ray.o) / ray.d;
     Vec3 ts2 = (s - ray.o) / ray.d;
     float t1x = std::min(ts1.x, ts2.x), t2x = std::max(ts1.x, ts2.x);
@@ -109,6 +109,10 @@ std::optional<Intersection> intersectBoxAndRay(const Vec3 &s, const Ray &ray) {
     } else {
         is_inside = false;
         t = t1;
+    }
+
+    if (!require_norma) {
+        return {Intersection {t, {}, is_inside}};
     }
 
     Vec3 p = ray.o + t * ray.d;
@@ -215,5 +219,5 @@ float AABB::getS() const {
 }
 
 std::optional<Intersection> AABB::intersect(const Ray &ray) const {
-    return intersectBoxAndRay(0.5 * (max - min), ray - 0.5 * (min + max));
+    return intersectBoxAndRay(0.5 * (max - min), ray - 0.5 * (min + max), false);
 }
