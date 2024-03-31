@@ -5,7 +5,7 @@
 
 namespace sceneio {
 
-const int SAMPLES_DROP = 4;
+const int SAMPLES_DROP = 2;
 
 std::pair<Figure, std::optional<std::string>> loadPrimitive(std::istream &in) {
     std::string cmdLine;

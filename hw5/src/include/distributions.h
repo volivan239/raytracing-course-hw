@@ -50,8 +50,6 @@ public:
             // Can happen due to precision errors
             return n;
         }
-        Vec3 res = 1. / len * d;
-        return res;
         return 1. / len * d;
     }
 
@@ -63,7 +61,7 @@ public:
 
 class BoxLight {
 private:
-    float sTotal;
+    float sTotal, sx, sy, sz, wx, wy, wz;
 
 public:
     const Figure figure;
@@ -75,17 +73,17 @@ public:
 
 public:
     BoxLight(const Figure &box): figure(box) {
-        float sx = box.data.x, sy = box.data.y, sz = box.data.z;
+        sx = box.data.x;
+        sy = box.data.y;
+        sz = box.data.z;
         sTotal = 8 * (sy * sz + sx * sz + sx * sy);
+        wx = sy * sz;
+        wy = sx * sz;
+        wz = sx * sy;
     }
 
     Vec3 sample(std::uniform_real_distribution<float> &u01, rng_type &rng, Vec3 x, Vec3 n) {
         (void) n;
-
-        float sx = figure.data.x, sy = figure.data.y, sz = figure.data.z;
-        float wx = sy * sz;
-        float wy = sx * sz;
-        float wz = sx * sy;
 
         while (true) {
             float u = u01(rng) * (wx + wy + wz);
@@ -146,9 +144,6 @@ public:
 };
 
 class EllipsoidLight {
-private:
-    float pointProb;
-
 public:
     const Figure figure;
     
