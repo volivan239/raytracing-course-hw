@@ -10,7 +10,6 @@
 typedef std::minstd_rand rng_type;
 const float PI = acos(-1);
 
-
 class Uniform {
 public:
     Uniform() {}
@@ -242,12 +241,12 @@ private:
             return ans;
         }
 
-        auto secondIntersection = figure.intersect(Ray(x + (t + 0.0001) * d, d));
+        auto secondIntersection = figure.intersect(Ray(x + (t + eps) * d, d));
         if (!secondIntersection.has_value()) {
             return ans;
         }
         auto [t2, yn2, __] = secondIntersection.value();
-        Vec3 y2 = x + (t + 0.0001 + t2) * d;
+        Vec3 y2 = x + (t + eps + t2) * d;
         return ans + (std::holds_alternative<BoxLight>(figureLight) ? std::get<BoxLight>(figureLight).pdfOne(x, d, y2, yn2) :
                     (std::holds_alternative<EllipsoidLight>(figureLight) ? std::get<EllipsoidLight>(figureLight).pdfOne(x, d, y2, yn2) :
                     std::get<TriangleLight>(figureLight).pdfOne(x, d, y2, yn2)));

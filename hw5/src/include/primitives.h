@@ -6,6 +6,8 @@
 #include "quaternion.h"
 #include "material.h"
 
+const long double eps = 1e-3;
+
 class Ray {
 public:
     const Vec3 o, d;

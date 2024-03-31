@@ -60,20 +60,20 @@ Color Scene::getColor(std::uniform_real_distribution<float> &u01, std::normal_di
     auto x = ray.o + t * ray.d;
 
     if (figurePtr->material == Material::DIFFUSE) {
-        Vec3 d = distribution.sample(u01, n01, rng, x + 0.0001 * norma, norma);
+        Vec3 d = distribution.sample(u01, n01, rng, x + eps * norma, norma);
         if (d.dot(norma) < 0) {
             return figurePtr->emission;
         }
-        float pdf = distribution.pdf(x + 0.0001 * norma, norma, d);
-        Ray dRay = Ray(x + 0.0001 * d, d);
+        float pdf = distribution.pdf(x + eps * norma, norma, d);
+        Ray dRay = Ray(x + eps * d, d);
         return figurePtr->emission + 1. / (PI * pdf) * d.dot(norma) * figurePtr->color * getColor(u01, n01, rng, dRay, recLimit - 1);
     } else if (figurePtr->material == Material::METALLIC) {
         Vec3 reflectedDir = ray.d.normalize() - 2. * norma.dot(ray.d.normalize()) * norma;
-        Ray reflected = Ray(ray.o + t * ray.d + 0.0001 * reflectedDir, reflectedDir);
+        Ray reflected = Ray(ray.o + t * ray.d + eps * reflectedDir, reflectedDir);
         return figurePtr->emission + figurePtr->color * getColor(u01, n01, rng, reflected, recLimit - 1);
     } else {
         Vec3 reflectedDir = ray.d.normalize() - 2. * norma.dot(ray.d.normalize()) * norma;
-        Ray reflected = Ray(ray.o + t * ray.d + 0.0001 * reflectedDir, reflectedDir);
+        Ray reflected = Ray(ray.o + t * ray.d + eps * reflectedDir, reflectedDir);
         Color reflectedColor = getColor(u01, n01, rng, reflected, recLimit - 1);
 
         float eta1 = 1., eta2 = figurePtr->ior;
@@ -95,7 +95,7 @@ Color Scene::getColor(std::uniform_real_distribution<float> &u01, std::normal_di
 
         float cosTheta2 = sqrt(1 - sinTheta2 * sinTheta2);
         Vec3 refractedDir = eta1 / eta2 * (-1. * l) + (eta1 / eta2 * norma.dot(l) - cosTheta2) * norma;
-        Ray refracted = Ray(ray.o + t * ray.d + 0.0001 * refractedDir, refractedDir);
+        Ray refracted = Ray(ray.o + t * ray.d + eps * refractedDir, refractedDir);
         Color refractedColor = getColor(u01, n01, rng, refracted, recLimit - 1);
         if (!is_inside) {
             refractedColor = refractedColor * figurePtr->color;
