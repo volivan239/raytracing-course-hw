@@ -41,6 +41,7 @@ private:
 public:
     Transition() {
         memset(matrix_, 0, sizeof(matrix_));
+        matrix_[0][0] = matrix_[1][1] = matrix_[2][2] = matrix_[3][3] = 1;
     }
 
     Transition(float matrix[4][4]) {

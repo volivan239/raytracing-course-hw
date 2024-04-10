@@ -29,7 +29,6 @@ void loadBufferViews(const rapidjson::Document &gltfScene, Scene &scene) {
             bufferViewSpec["buffer"].GetUint(),
             bufferViewSpec["byteLength"].GetUint(),
             bufferViewSpec["byteOffset"].GetUint(),
-            bufferViewSpec["target"].GetUint()
         });
     }
 }
@@ -66,7 +65,7 @@ void loadNodes(const rapidjson::Document &gltfScene, Scene &scene) {
             auto matrix = node["matrix"].GetArray();
             float transition[4][4];
             for (size_t i = 0; i < 16; i++) {
-                transition[i / 4][i % 4] = matrix[i].GetFloat();
+                transition[i % 4][i / 4] = matrix[i].GetFloat();
             }
             curNode.transition = Transition(transition);
         }
@@ -203,6 +202,7 @@ void loadFigures(size_t indicesIndex, const Transition &transition, size_t mater
             pos2 = *(reinterpret_cast<const uint16_t*>(buffer.data() + bufferView.byteOffset + 2 * (i + 1)));
             pos3 = *(reinterpret_cast<const uint16_t*>(buffer.data() + bufferView.byteOffset + 2 * (i + 2)));
         } else {
+            std::cerr << accessor.componentType << std::endl;
             pos1 = *(reinterpret_cast<const uint32_t*>(buffer.data() + bufferView.byteOffset + 4 * i));
             pos2 = *(reinterpret_cast<const uint32_t*>(buffer.data() + bufferView.byteOffset + 4 * (i + 1)));
             pos3 = *(reinterpret_cast<const uint32_t*>(buffer.data() + bufferView.byteOffset + 4 * (i + 2)));
@@ -239,11 +239,15 @@ void loadCameraPosition(const rapidjson::Document &gltfScene, Scene &scene) {
 
     for (const auto &node : scene.nodes) {
         if (node.camera.has_value()) {
+            std::cerr << "Detected camera" << std::endl;
             scene.cameraFovY = gltfScene["cameras"].GetArray()[node.camera.value()]["perspective"]["yfov"].GetFloat();
             scene.cameraPos = node.totalTransition.apply({0, 0, 0});
             scene.cameraUp = node.totalTransition.apply(scene.cameraUp) - scene.cameraPos;
             scene.cameraRight = node.totalTransition.apply(scene.cameraRight) - scene.cameraPos;
             scene.cameraForward = node.totalTransition.apply(scene.cameraForward) - scene.cameraPos;
+            // scene.cameraUp = scene.cameraUp.normalize();
+            // scene.cameraForward = scene.cameraForward.normalize();
+            // scene.cameraRight = scene.cameraRight.normalize();
         }
     }
 }
@@ -265,6 +269,7 @@ Scene loadScene(std::string_view gltfFilename) {
     loadAccessors(gltfScene, scene);
     loadMaterials(gltfScene, scene);
     loadFiguresFromNodes(scene);
+    // scene.figures.resize(12);
     loadCameraPosition(gltfScene, scene);
 
     scene.initBVH();

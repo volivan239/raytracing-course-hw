@@ -11,14 +11,12 @@ using Buffer = std::vector<char>;
 struct BufferView {
     size_t buffer;
     size_t byteLength;
-    size_t byteOffset;
-    size_t target;
+    size_t byteOffset = 0;
 };
 
 struct Node {
     std::optional<std::size_t> mesh = {};
     std::optional<std::size_t> camera = {};
-    // TODO: support custom transition matrix
     Quaternion rotation;
     Vec3 scale = {1, 1, 1};
     Vec3 translation;
@@ -54,5 +52,5 @@ struct Accessor {
     std::size_t count;
     std::size_t componentType;
     std::string type;
-    std::size_t byteOffset;
+    std::size_t byteOffset = 0;
 };
