@@ -4,7 +4,7 @@
 #include "vec3.h"
 #include "color.h"
 #include "quaternion.h"
-#include "material.h"
+#include "gltf_structs.h"
 
 const long double eps = 1e-4;
 
@@ -40,10 +40,7 @@ private:
 public:
     Vec3 position;
     Quaternion rotation;
-    Material material = Material::DIFFUSE;
-    Color color;
-    Color emission;
-    float ior;
+    GltfMaterial material;
 
     FigureType type;
     Vec3 data;

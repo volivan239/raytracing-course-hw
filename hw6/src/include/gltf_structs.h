@@ -2,7 +2,6 @@
 
 #include <stddef.h>
 #include <vector>
-#include "primitives.h"
 #include "transition.h"
 #include "material.h"
 
@@ -23,7 +22,6 @@ struct Node {
     std::optional<Transition> transition = {};
     std::vector<size_t> children;
     std::optional<size_t> parentNode = {};
-    std::vector<Figure> figures;
     Transition totalTransition;
 };
 
