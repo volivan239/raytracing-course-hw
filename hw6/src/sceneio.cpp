@@ -62,6 +62,14 @@ void loadNodes(const rapidjson::Document &gltfScene, Scene &scene) {
                 curNode.children.push_back(child.GetUint());
             }
         }
+        if (node.HasMember("matrix")) {
+            auto matrix = node["matrix"].GetArray();
+            float transition[4][4];
+            for (size_t i = 0; i < 16; i++) {
+                transition[i / 4][i % 4] = matrix[i].GetFloat();
+            }
+            curNode.transition = Transition(transition);
+        }
         if (!curNode.transition.has_value()) {
             curNode.transition = Transition(curNode.translation, curNode.rotation, curNode.scale);
         }
@@ -87,12 +95,17 @@ void loadMeshes(const rapidjson::Document &gltfScene, Scene &scene) {
 void loadAccessors(const rapidjson::Document &gltfScene, Scene &scene) {
     const auto &accessors = gltfScene["accessors"].GetArray();
     for (const auto &accessor : accessors) {
-        scene.accessors.push_back(Accessor{
-            accessor["bufferView"].GetUint(),
-            accessor["count"].GetUint(),
-            accessor["componentType"].GetUint(),
-            accessor["type"].GetString()
-        });
+        auto curAccessor = Accessor{
+            .bufferView = accessor["bufferView"].GetUint(),
+            .count = accessor["count"].GetUint(),
+            .componentType = accessor["componentType"].GetUint(),
+            .type = accessor["type"].GetString(),
+            .byteOffset = 0
+        };
+        if (accessor.HasMember("byteOffset")) {
+            curAccessor.byteOffset = accessor["byteOffset"].GetFloat();
+        }
+        scene.accessors.push_back(curAccessor);
     }
 }
 
@@ -123,11 +136,12 @@ std::vector<Vec3> loadPositions(size_t positionsIndex, Scene &scene) {
     if (accessor.type != "VEC3") {
         std::cerr << "Load positions accessor: " << accessor.type << std::endl;
     }
+    size_t byteOffset = bufferView.byteOffset + accessor.byteOffset;
     for (size_t i = 0; i < accessor.count; i++) {
         Vec3 position;
-        position.x = *(reinterpret_cast<const float*>(buffer.data() + bufferView.byteOffset + 12 * i));
-        position.y = *(reinterpret_cast<const float*>(buffer.data() + bufferView.byteOffset + 12 * i + 4));
-        position.z = *(reinterpret_cast<const float*>(buffer.data() + bufferView.byteOffset + 12 * i + 8));
+        position.x = *(reinterpret_cast<const float*>(buffer.data() + byteOffset + 12 * i));
+        position.y = *(reinterpret_cast<const float*>(buffer.data() + byteOffset + 12 * i + 4));
+        position.z = *(reinterpret_cast<const float*>(buffer.data() + byteOffset + 12 * i + 8));
         positions.push_back(position);
     }
     return positions;
@@ -196,7 +210,7 @@ void loadFigures(size_t indicesIndex, const Transition &transition, size_t mater
         Vec3 p1 = transition.apply(positions[pos1]);
         Vec3 p2 = transition.apply(positions[pos2]);
         Vec3 p3 = transition.apply(positions[pos3]);
-        Figure fig(FigureType::TRIANGLE, p1, p2, p3);
+        Figure fig(FigureType::TRIANGLE, p1, p3, p2);
         fig.color = materialValue.color;
         fig.emission = materialValue.emission;
         fig.material = materialValue.material;

@@ -54,4 +54,5 @@ struct Accessor {
     std::size_t count;
     std::size_t componentType;
     std::string type;
+    std::size_t byteOffset;
 };
