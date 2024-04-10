@@ -11,7 +11,7 @@ using Buffer = std::vector<char>;
 struct BufferView {
     size_t buffer;
     size_t byteLength;
-    size_t byteOffset = 0;
+    size_t byteOffset;
 };
 
 struct Node {
@@ -52,5 +52,5 @@ struct Accessor {
     std::size_t count;
     std::size_t componentType;
     std::string type;
-    std::size_t byteOffset = 0;
+    std::size_t byteOffset;
 };
