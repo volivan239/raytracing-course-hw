@@ -43,6 +43,7 @@ private:
 public:
     Vec3 position;
     Quaternion rotation;
+    size_t materialIndex;
     GltfMaterial material;
 
     Vertex data;

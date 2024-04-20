@@ -27,6 +27,7 @@ public:
     std::vector<Mesh> meshes;
     std::vector<Accessor> accessors;
     std::vector<GltfMaterial> materials;
+    std::vector<MaterialModel> materialModels;
     int samples;
     int rayDepth = 6;
     int width, height;

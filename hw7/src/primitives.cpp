@@ -127,7 +127,11 @@ std::optional<Intersection> Figure::intersectAsTriangle(const Ray &ray) const {
     }
 
     Vec3 shadingNorma = data3.normals + u * (data.normals - data3.normals) + v * (data2.normals - data3.normals);
-    shadingNorma = geomNorma;
+    shadingNorma = shadingNorma.normalize();
+    if (is_inside) {
+        shadingNorma = -1. * shadingNorma;
+    }
+    geomNorma = geomNorma.normalize();
     return {{t, geomNorma, shadingNorma, is_inside}};
 }
 

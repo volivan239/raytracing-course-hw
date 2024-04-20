@@ -159,10 +159,13 @@ void loadMaterials(const rapidjson::Document &gltfScene, Scene &scene) {
                     color[1].GetFloat(),
                     color[2].GetFloat()
                 };
-                curMaterial.alpha = color[3].GetFloat();
             }
             if (material["pbrMetallicRoughness"].HasMember("metallicFactor")) {
                 curMaterial.metallicFactor = material["pbrMetallicRoughness"]["metallicFactor"].GetFloat();
+            }
+            if (material["pbrMetallicRoughness"].HasMember("roughnessFactor")) {
+                curMaterial.roughnessFactor = material["pbrMetallicRoughness"]["roughnessFactor"].GetFloat();
+                curMaterial.roughnessFactor = std::max(curMaterial.roughnessFactor, 0.05f);
             }
         }
         if (material.HasMember("emissiveFactor")) {
@@ -177,12 +180,14 @@ void loadMaterials(const rapidjson::Document &gltfScene, Scene &scene) {
             float emissionFactor = material["extensions"]["KHR_materials_emissive_strength"]["emissiveStrength"].GetFloat();
             curMaterial.emission = emissionFactor * curMaterial.emission;
         }
-        if (curMaterial.alpha < 1) {
-            curMaterial.material = Material::DIELECTRIC;
-        } else if (curMaterial.metallicFactor > 0) {
-            curMaterial.material = Material::METALLIC;
-        }
         scene.materials.push_back(curMaterial);
+    }
+    for (const auto &gltfMaterial : scene.materials) {
+        scene.materialModels.push_back(MaterialModel(
+            gltfMaterial.roughnessFactor * gltfMaterial.roughnessFactor,
+            gltfMaterial.metallicFactor,
+            gltfMaterial.color
+        ));
     }
 }
 
@@ -218,6 +223,7 @@ void loadFigures(size_t indicesIndex, const Transition &transition, size_t mater
         Vec3 n3 = (transition.apply(normals[pos3]) - shift).normalize();
         Figure fig({p1, n1}, {p3, n3}, {p2, n2});
         fig.material = materialValue;
+        fig.materialIndex = material;
         scene.figures.push_back(fig);
     }
 }
@@ -231,7 +237,6 @@ void loadFiguresFromNodes(Scene &scene) {
         for (const auto &primitive : scene.meshes[mesh].primitives) {
             auto positions = loadVec3s(primitive.positions, scene);
             auto normals = loadVec3s(primitive.normals, scene);
-            std::cerr << ' ' << positions.size() << ' ' << normals.size() << std::endl;
             loadFigures(primitive.indices, node.totalTransition, primitive.material, positions, normals, scene);
         }
     }

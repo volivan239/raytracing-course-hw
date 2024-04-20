@@ -27,10 +27,9 @@ struct Node {
 
 struct GltfMaterial {
     Color color = {1, 1, 1};
-    float alpha = 1.0;
     Color emission = {0, 0, 0};
     float metallicFactor = 1.0;
-    Material material = Material::DIFFUSE;
+    float roughnessFactor = 1.0;
 
     static constexpr const float ior = 1.5;
 };

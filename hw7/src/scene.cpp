@@ -39,49 +39,63 @@ Color Scene::getColor(std::uniform_real_distribution<float> &u01, std::normal_di
     auto figurePtr = figures.begin() + figurePos;
     auto x = ray.o + t * ray.d;
 
-    if (figurePtr->material.material == Material::DIFFUSE) {
-        Vec3 d = distribution.sample(u01, n01, rng, x + eps * shadingNorma, shadingNorma);
-        if (d.dot(shadingNorma) < 0) {
-            return figurePtr->material.emission;
-        }
-        float pdf = distribution.pdf(x + eps * shadingNorma, shadingNorma, d);
-        Ray dRay = Ray(x + eps * d, d);
-        return figurePtr->material.emission + 1. / (PI * pdf) * d.dot(shadingNorma) * figurePtr->material.color * getColor(u01, n01, rng, dRay, recLimit - 1);
-    } else if (figurePtr->material.material == Material::METALLIC) {
-        Vec3 reflectedDir = ray.d.normalize() - 2. * shadingNorma.dot(ray.d.normalize()) * shadingNorma;
-        Ray reflected = Ray(ray.o + t * ray.d + eps * reflectedDir, reflectedDir);
-        return figurePtr->material.emission + figurePtr->material.color * getColor(u01, n01, rng, reflected, recLimit - 1);
-    } else {
-        Vec3 reflectedDir = ray.d.normalize() - 2. * shadingNorma.dot(ray.d.normalize()) * shadingNorma;
-        Ray reflected = Ray(ray.o + t * ray.d + eps * reflectedDir, reflectedDir);
-        Color reflectedColor = getColor(u01, n01, rng, reflected, recLimit - 1);
-
-        float eta1 = 1., eta2 = figurePtr->material.ior;
-        if (is_inside) {
-            std::swap(eta1, eta2);
-        }
-
-        Vec3 l = -1. * ray.d.normalize();
-        float sinTheta2 = eta1 / eta2 * sqrt(1 - shadingNorma.dot(l) * shadingNorma.dot(l));
-        if (fabs(sinTheta2) > 1.) {
-            return figurePtr->material.emission + reflectedColor;
-        }
-
-        float r0 = pow((eta1 - eta2) / (eta1 + eta2), 2.);
-        float r = r0 + (1 - r0) * pow(1 - shadingNorma.dot(l), 5.);
-        if (u01(rng) < r) {
-            return figurePtr->material.emission + reflectedColor;
-        }
-
-        float cosTheta2 = sqrt(1 - sinTheta2 * sinTheta2);
-        Vec3 refractedDir = eta1 / eta2 * (-1. * l) + (eta1 / eta2 * shadingNorma.dot(l) - cosTheta2) * shadingNorma;
-        Ray refracted = Ray(ray.o + t * ray.d + eps * refractedDir, refractedDir);
-        Color refractedColor = getColor(u01, n01, rng, refracted, recLimit - 1);
-        if (!is_inside) {
-            refractedColor = refractedColor * figurePtr->material.color;
-        }
-        return figurePtr->material.emission + refractedColor;
+    Vec3 d = distribution.sample(u01, n01, rng, x + eps * shadingNorma, shadingNorma);
+    Ray dRay = Ray(x + eps * d, d);
+    Vec3 brdf = materialModels[figurePtr->materialIndex].brdf(-1.0 * ray.d, dRay.d, shadingNorma);
+    if (brdf.x < eps && brdf.y < eps && brdf.z < eps) {
+        return figurePtr->material.emission;
     }
+
+    float pdf = distribution.pdf(x + eps * shadingNorma, shadingNorma, d);
+    // if (rand() % 1000000 == 0) {
+    //     std::cerr << brdf.x << ' ' << brdf.y << ' ' << brdf.z << ' ' << pdf << std::endl;
+    // }
+    return figurePtr->material.emission + 1.0 / pdf * d.dot(shadingNorma) * getColor(u01, n01, rng, dRay, recLimit - 1) * brdf;
+    // return figurePtr->material.emission + 
+
+    // if (figurePtr->material.material == Material::DIFFUSE) {
+    //     Vec3 d = distribution.sample(u01, n01, rng, x + eps * shadingNorma, shadingNorma);
+    //     if (d.dot(shadingNorma) < 0) {
+    //         return figurePtr->material.emission;
+    //     }
+    //     float pdf = distribution.pdf(x + eps * shadingNorma, shadingNorma, d);
+    //     Ray dRay = Ray(x + eps * d, d);
+    //     return figurePtr->material.emission + 1. / (PI * pdf) * d.dot(shadingNorma) * figurePtr->material.color * getColor(u01, n01, rng, dRay, recLimit - 1);
+    // } else if (figurePtr->material.material == Material::METALLIC) {
+    //     Vec3 reflectedDir = ray.d.normalize() - 2. * shadingNorma.dot(ray.d.normalize()) * shadingNorma;
+    //     Ray reflected = Ray(ray.o + t * ray.d + eps * reflectedDir, reflectedDir.normalize());
+    //     return figurePtr->material.emission + figurePtr->material.color * getColor(u01, n01, rng, reflected, recLimit - 1);
+    // } else {
+    //     Vec3 reflectedDir = ray.d.normalize() - 2. * shadingNorma.dot(ray.d.normalize()) * shadingNorma;
+    //     Ray reflected = Ray(ray.o + t * ray.d + eps * reflectedDir, reflectedDir.normalize());
+    //     Color reflectedColor = getColor(u01, n01, rng, reflected, recLimit - 1);
+
+    //     float eta1 = 1., eta2 = figurePtr->material.ior;
+    //     if (is_inside) {
+    //         std::swap(eta1, eta2);
+    //     }
+
+    //     Vec3 l = -1. * ray.d.normalize();
+    //     float sinTheta2 = eta1 / eta2 * sqrt(1 - shadingNorma.dot(l) * shadingNorma.dot(l));
+    //     if (fabs(sinTheta2) > 1.) {
+    //         return figurePtr->material.emission + reflectedColor;
+    //     }
+
+    //     float r0 = pow((eta1 - eta2) / (eta1 + eta2), 2.);
+    //     float r = r0 + (1 - r0) * pow(1 - shadingNorma.dot(l), 5.);
+    //     if (u01(rng) < r) {
+    //         return figurePtr->material.emission + reflectedColor;
+    //     }
+
+    //     float cosTheta2 = sqrt(1 - sinTheta2 * sinTheta2);
+    //     Vec3 refractedDir = eta1 / eta2 * (-1. * l) + (eta1 / eta2 * shadingNorma.dot(l) - cosTheta2) * shadingNorma;
+    //     Ray refracted = Ray(ray.o + t * ray.d + eps * refractedDir, refractedDir);
+    //     Color refractedColor = getColor(u01, n01, rng, refracted, recLimit - 1);
+    //     if (!is_inside) {
+    //         refractedColor = refractedColor * figurePtr->material.color;
+    //     }
+    //     return figurePtr->material.emission + refractedColor;
+    // }
 }
 
 Color Scene::getPixel(rng_type &rng, int x, int y) {
@@ -103,5 +117,5 @@ Ray Scene::getCameraRay(float x, float y) const {
     float nx = tanFovX * (2 * x / width - 1);
     float ny = tanFovY * (2 * y / height - 1);
 
-    return {cameraPos, nx * cameraRight - ny * cameraUp + cameraForward};
+    return {cameraPos, (nx * cameraRight - ny * cameraUp + cameraForward).normalize()};
 }

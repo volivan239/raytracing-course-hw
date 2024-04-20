@@ -8,7 +8,6 @@
 #include "bvh.h"
 
 typedef std::minstd_rand rng_type;
-const float PI = acos(-1);
 
 class Uniform {
 public:
@@ -28,7 +27,7 @@ public:
         if (d.dot(n) < 0) {
             return 0;
         }
-        return 1. / (2. * PI);
+        return 1. / (2. * M_PI);
     }
 };
 
@@ -54,7 +53,7 @@ public:
 
     float pdf(Vec3 x, Vec3 n, Vec3 d) const {
         (void) x;
-        return std::max(0.f, d.dot(n) / PI);
+        return std::max(0.f, d.dot(n) / (float) M_PI);
     }
 };
 
