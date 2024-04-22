@@ -103,15 +103,6 @@ std::optional<Intersection> Figure::intersectAsTriangle(const Ray &ray) const {
     }
     auto [t, geomNorma, _, is_inside] = intersection.value();
     Vec3 p = ray.o - a + t * ray.d;
-    // if (b.cross(p).dot(n) < 0) {
-    //     return {};
-    // }
-    // if (p.cross(c).dot(n) < 0) {
-    //     return {};
-    // }
-    // if ((c - b).cross(p - b).dot(n) < 0) {
-    //     return {};
-    // }
 
     auto a1 = magic1[0] * b.x + magic1[1] * b.y + magic1[2] * b.z;
     auto b1 = magic1[0] * c.x + magic1[1] * c.y + magic1[2] * c.z;

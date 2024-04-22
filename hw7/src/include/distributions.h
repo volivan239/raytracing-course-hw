@@ -165,30 +165,124 @@ private:
     }    
 };
 
+class Vndf {
+private:
+    Vec3 sample_(std::uniform_real_distribution<float> &u01, rng_type &rng, Vec3 v, float alpha_) const {
+        // Section 3.2: transforming the view direction to the hemisphere configuration
+        Vec3 vh = Vec3(alpha_ * v.x, alpha_ * v.y, v.z).normalize();
+
+        // Section 4.1: orthonormal basis (with special case if cross product is zero)
+        float lensq = vh.x * vh.x + vh.y * vh.y;
+        Vec3 T1 = lensq > 0 ? 1. / sqrt(lensq) * Vec3(-vh.y, vh.x, 0) : Vec3(1, 0, 0);
+        Vec3 T2 = T1.cross(vh);
+
+        // Section 4.2: parameterization of the projected area
+        float u1 = u01(rng), u2 = u01(rng);
+        float r = sqrt(u1);
+        float phi = 2.0 * M_PI * u2;
+        float t1 = r * cos(phi);
+        float t2 = r * sin(phi);
+        float s = 0.5 * (1.0 + vh.z);
+        t2 = (1.0 - s) * sqrt(1.f - t1 * t1) + s * t2;
+
+        // Section 4.3: reprojection onto hemisphere
+        Vec3 nh = t1 * T1 + t2 * T2 + sqrt(std::max<float>(0.f, 1.0 - t1 * t1 - t2 * t2)) * vh;
+
+        // Section 3.4: transforming the normal back to the ellipsoid configuration
+        Vec3 ne = Vec3(alpha_ * nh.x, alpha_ * nh.y, std::max<float>(0.0, nh.z)).normalize();
+        return 2 * ne.dot(v) * ne - v;
+    }
+
+    float D(Vec3 n, float alpha_) const {
+        return 1. / (M_PI * alpha_ * alpha_ * pow(n.x * n.x / (alpha_ * alpha_) + n.y * n.y / (alpha_ * alpha_) + n.z * n.z, 2.0));
+    }
+
+    float G1(Vec3 v, float alpha_) const {
+        float lambda = 0.5 * (-1 + sqrt(1 + (alpha_ * alpha_ * v.x * v.x + alpha_ * alpha_ * v.y * v.y) / (v.z * v.z)));
+        return 1. / (1 + lambda);
+    }
+
+    float pdf_(Vec3 d, Vec3 v, float alpha_) const {
+        Vec3 ni = (v + d).normalize();
+        float dv = G1(ni, alpha_) * std::max(0.f, v.dot(ni)) * D(ni, alpha_) / fabs(v.z);
+        float res = dv / (4 * v.dot(ni));
+        if (std::isnan(v.z)) {
+            std::cerr << "After: " << v.x << ' ' << v.y << ' ' << v.z << std::endl;
+        }
+        return res;
+    }
+
+    Quaternion getQ(Vec3 n) const {
+        Vec3 newN = {0, 0, 1};
+        if (n.dot(newN) > 0.9999) {
+            return {};
+        }
+        if (n.dot(newN) < -0.9999) {
+            return Quaternion{0, 0, 0, -1};
+        }
+        Vec3 a = n.cross(newN);
+        float w = sqrt(n.len2()) + n.dot(newN);
+        float len = sqrt(a.len2() + w * w);
+        if (std::isnan(w / len)) {
+            // std::cerr << n.x << ' ' << n.y << ' ' << n.z << ' ' << a.x << ' ' <<std::endl;
+        }
+        return Quaternion{1 / len * a, w / len};
+    }
+
+public:
+    Vndf() {}
+
+    Vec3 sample(std::uniform_real_distribution<float> &u01, rng_type &rng, Vec3 x, Vec3 n, Vec3 v, float alpha_) const {
+        (void) x;
+        v = -1. * v;
+        auto q = getQ(n);
+        Vec3 res = q.conjugate().transform(sample_(u01, rng, q.transform(v).normalize(), alpha_)).normalize();
+        return res;
+    }
+
+    float pdf(Vec3 x, Vec3 n, Vec3 d, Vec3 v, float alpha_) const {
+        (void) x;
+        v = -1. * v;
+        auto q = getQ(n);
+        if (std::isnan(v.z) || std::isnan(v.y) || std::isnan(v.x) || std::isnan(q.w)) {
+            std::cerr << "Before:" << v.x << ' ' << v.y << ' ' << v.z << ' ' << q.w << std::endl;
+        }
+        float res = pdf_(q.transform(d), q.transform(v), alpha_);
+        if (std::isnan(res) || std::isinf(res)) {
+            // std::cerr << "LOSHARA" << ' ' << std::isnan(res) << ' ' << std::isinf(res) << std::endl;
+        }
+        return res;
+    }
+};
+
 class Mix {
 private:
-    std::vector<std::variant<Cosine, FiguresMix>> components;
+    std::vector<std::variant<Cosine, Vndf, FiguresMix>> components;
 
 public:
     Mix() {}
-    Mix(const std::vector<std::variant<Cosine, FiguresMix>> &components): components(components) {}
+    Mix(const std::vector<std::variant<Cosine, Vndf, FiguresMix>> &components): components(components) {}
 
-    Vec3 sample(std::uniform_real_distribution<float> &u01, std::normal_distribution<float> &n01, rng_type &rng, Vec3 x, Vec3 n) {
+    Vec3 sample(std::uniform_real_distribution<float> &u01, std::normal_distribution<float> &n01, rng_type &rng, Vec3 x, Vec3 n, Vec3 v, float alpha) {
         int distNum = u01(rng) * components.size();
         if (std::holds_alternative<Cosine>(components[distNum])) {
             return std::get<Cosine>(components[distNum]).sample(n01, rng, x, n);
-        } else {
+        } else if (std::holds_alternative<FiguresMix>(components[distNum])) {
             return std::get<FiguresMix>(components[distNum]).sample(u01, rng, x, n);
+        } else {
+            return std::get<Vndf>(components[distNum]).sample(u01, rng, x, n, v, alpha);   
         }
     }
 
-    float pdf(Vec3 x, Vec3 n, Vec3 d) const {
+    float pdf(Vec3 x, Vec3 n, Vec3 d, Vec3 v, float alpha) const {
         float ans = 0;
         for (const auto &component : components) {
             if (std::holds_alternative<Cosine>(component)) {
                 ans += std::get<Cosine>(component).pdf(x, n, d);
-            } else {
+            } else if (std::holds_alternative<FiguresMix>(component)) {
                 ans += std::get<FiguresMix>(component).pdf(x, n, d);
+            } else {
+                ans += std::get<Vndf>(component).pdf(x, n, d, v, alpha);
             }
         }
         return ans / components.size();

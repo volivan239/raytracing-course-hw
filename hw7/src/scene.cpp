@@ -7,8 +7,9 @@ Scene::Scene() {}
 
 void Scene::initDistribution() {
     auto lightDistribution = FiguresMix(figures);
-    std::vector<std::variant<Cosine, FiguresMix>> finalDistributions;
+    std::vector<std::variant<Cosine, Vndf, FiguresMix>> finalDistributions;
     finalDistributions.push_back(Cosine());
+    finalDistributions.push_back(Vndf());
     if (!lightDistribution.isEmpty()) {
         finalDistributions.push_back(lightDistribution);
     }
@@ -38,16 +39,25 @@ Color Scene::getColor(std::uniform_real_distribution<float> &u01, std::normal_di
     auto shadingNorma = shadingNorma_.value();
     auto figurePtr = figures.begin() + figurePos;
     auto x = ray.o + t * ray.d;
+    float alpha = pow(figurePtr->material.roughnessFactor, 2.0);
 
-    Vec3 d = distribution.sample(u01, n01, rng, x + eps * shadingNorma, shadingNorma);
-    Ray dRay = Ray(x + eps * d, d);
+    Vec3 d = distribution.sample(u01, n01, rng, x + eps * shadingNorma, shadingNorma, ray.d, alpha);
+    Ray dRay = Ray(x + eps * shadingNorma, d);
     Vec3 brdf = materialModels[figurePtr->materialIndex].brdf(-1.0 * ray.d, dRay.d, shadingNorma);
-    if (brdf.x < eps && brdf.y < eps && brdf.z < eps) {
+    if (std::isnan(brdf.x) || std::isnan(brdf.y) || std::isnan(brdf.z)) {
+        std::cerr << "SUKA" << std::endl;
+    }
+    if ((brdf.x < eps && brdf.y < eps && brdf.z < eps)) {
         return figurePtr->material.emission;
     }
 
-    float pdf = distribution.pdf(x + eps * shadingNorma, shadingNorma, d);
-    return figurePtr->material.emission + 1.0 / pdf * d.dot(shadingNorma) * getColor(u01, n01, rng, dRay, recLimit - 1) * brdf;
+    float pdf = distribution.pdf(x + eps * shadingNorma, shadingNorma, d, ray.d, alpha);
+
+
+    // if (brdf.y / pdf * d.dot(shadingNorma) > 1e4 || std::isnan(brdf.y) || std::isinf(brdf.y) || rand() % 1000000 == 0) {
+    //     std::cerr << "WTF " << brdf.x << ' ' << brdf.y << ' ' << brdf.z << ' ' << pdf << ' ' << d.dot(shadingNorma) << std::endl;
+    // }
+    return figurePtr->material.emission + 1.0 / pdf * fabs(d.dot(shadingNorma)) * getColor(u01, n01, rng, dRay, recLimit - 1) * brdf;
 }
 
 Color Scene::getPixel(rng_type &rng, int x, int y) {
