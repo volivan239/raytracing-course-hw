@@ -12,14 +12,14 @@ private:
 public:    
     float distributionTerm(const Vec3 &h, const Vec3 &n) const {
         float dotHN = h.dot(n);
-        if (dotHN <= 0) {
+        if (dotHN < 0) {
             return 0;
         }
         return alpha2 / (M_PI * pow(std::max(0.f, (alpha2 - 1) * dotHN * dotHN + 1), 2.0));
     }
 
     float g1(const Vec3 &n, const Vec3 &x, const Vec3 &h) const {
-        if (h.dot(x) <= 0) {
+        if (h.dot(x) < 0) {
             return 0;
         }
         return 2 * fabs(n.dot(x)) / (fabs(n.dot(x)) + sqrt(std::max(0.f, alpha2 + (1 - alpha2) * n.dot(x) * n.dot(x))));

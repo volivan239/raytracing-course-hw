@@ -238,9 +238,6 @@ public:
         auto q = getQ(n);
         auto vTransformed = q.transform(v);
         auto dTransformed = sample_(u01, rng, vTransformed, alpha_);
-        if (pdf_(dTransformed, vTransformed, alpha_) < 1e-6) {
-            pdf_(dTransformed, vTransformed, alpha_);
-        }
         Vec3 res = q.conjugate().transform(dTransformed);
         return res;
     }
@@ -250,9 +247,9 @@ public:
         v = -1. * v;
         auto q = getQ(n);
         float res = pdf_(q.transform(d), q.transform(v), alpha_);
-        if (std::isnan(res) || std::isinf(res)) {
-            std::cerr << "LOSHARA" << ' ' << std::isnan(res) << ' ' << std::isinf(res) << std::endl;
-        }
+        // if (std::isnan(res) || std::isinf(res)) {
+        //     std::cerr << "LOSHARA" << ' ' << std::isnan(res) << ' ' << std::isinf(res) << std::endl;
+        // }
         return res;
     }
 };
