@@ -165,7 +165,7 @@ void loadMaterials(const rapidjson::Document &gltfScene, Scene &scene) {
             }
             if (material["pbrMetallicRoughness"].HasMember("roughnessFactor")) {
                 curMaterial.roughnessFactor = material["pbrMetallicRoughness"]["roughnessFactor"].GetFloat();
-                curMaterial.roughnessFactor = std::max(curMaterial.roughnessFactor, 0.6f);
+                curMaterial.roughnessFactor = std::max(curMaterial.roughnessFactor, 0.2f);
             }
         }
         if (material.HasMember("emissiveFactor")) {

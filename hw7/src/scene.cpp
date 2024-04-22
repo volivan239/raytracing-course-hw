@@ -9,7 +9,7 @@ void Scene::initDistribution() {
     auto lightDistribution = FiguresMix(figures);
     std::vector<std::variant<Cosine, Vndf, FiguresMix>> finalDistributions;
     finalDistributions.push_back(Cosine());
-    // finalDistributions.push_back(Vndf());
+    finalDistributions.push_back(Vndf());
     if (!lightDistribution.isEmpty()) {
         finalDistributions.push_back(lightDistribution);
     }
@@ -44,9 +44,9 @@ Color Scene::getColor(std::uniform_real_distribution<float> &u01, std::normal_di
     Vec3 d = distribution.sample(u01, n01, rng, x + eps * shadingNorma, shadingNorma, ray.d, alpha);
     Ray dRay = Ray(x + eps * shadingNorma, d);
     Vec3 brdf = materialModels[figurePtr->materialIndex].brdf(-1.0 * ray.d, dRay.d, shadingNorma);
-    // if ((brdf.x < eps && brdf.y < eps && brdf.z < eps)) {
-    //     return figurePtr->material.emission;
-    // }
+    if ((brdf.x < eps && brdf.y < eps && brdf.z < eps)) {
+        return figurePtr->material.emission;
+    }
 
     float pdf = distribution.pdf(x + eps * shadingNorma, shadingNorma, d, ray.d, alpha);
 

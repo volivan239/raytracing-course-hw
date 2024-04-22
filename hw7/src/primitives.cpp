@@ -123,6 +123,9 @@ std::optional<Intersection> Figure::intersectAsTriangle(const Ray &ray) const {
         shadingNorma = -1. * shadingNorma;
     }
     geomNorma = geomNorma.normalize();
+    if (std::isnan(shadingNorma.x)) {
+        std::cerr << 127 << std::endl;
+    }
     return {{t, geomNorma, shadingNorma, is_inside}};
 }
 

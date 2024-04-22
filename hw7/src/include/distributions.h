@@ -190,9 +190,9 @@ private:
 
         // Section 3.4: transforming the normal back to the ellipsoid configuration
         Vec3 ne = Vec3(alpha_ * nh.x, alpha_ * nh.y, std::max<float>(0.0, nh.z)).normalize();
-        if (alpha_ < 3e-3 && ne.z < 0.8) {
-            std::cerr << "FUCK" << std::endl;
-        }
+        // if (alpha_ < 3e-3 && ne.z < 0.8) {
+        //     std::cerr << "FUCK" << std::endl;
+        // }
         return 2 * ne.dot(v) * ne - v;
     }
 
@@ -209,9 +209,9 @@ private:
         Vec3 ni = (v + d).normalize();
         float dv = G1(v, alpha_) * std::max(0.f, v.dot(ni)) * D(ni, alpha_) / fabs(v.z);
         float res = dv / (4 * v.dot(ni));
-        if (std::isnan(v.z)) {
-            std::cerr << "After: " << v.x << ' ' << v.y << ' ' << v.z << std::endl;
-        }
+        // if (std::isnan(v.z)) {
+        //     std::cerr << "After: " << v.x << ' ' << v.y << ' ' << v.z << std::endl;
+        // }
         return res;
     }
 
