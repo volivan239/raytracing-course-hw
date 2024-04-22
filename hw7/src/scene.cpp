@@ -44,19 +44,20 @@ Color Scene::getColor(std::uniform_real_distribution<float> &u01, std::normal_di
     Vec3 d = distribution.sample(u01, n01, rng, x + eps * shadingNorma, shadingNorma, ray.d, alpha);
     Ray dRay = Ray(x + eps * shadingNorma, d);
     Vec3 brdf = materialModels[figurePtr->materialIndex].brdf(-1.0 * ray.d, dRay.d, shadingNorma);
-    if (std::isnan(brdf.x) || std::isnan(brdf.y) || std::isnan(brdf.z)) {
-        std::cerr << "SUKA" << std::endl;
-    }
-    if ((brdf.x < eps && brdf.y < eps && brdf.z < eps)) {
-        return figurePtr->material.emission;
-    }
+    // if ((brdf.x < eps && brdf.y < eps && brdf.z < eps)) {
+    //     return figurePtr->material.emission;
+    // }
 
     float pdf = distribution.pdf(x + eps * shadingNorma, shadingNorma, d, ray.d, alpha);
 
 
-    // if (brdf.y / pdf * d.dot(shadingNorma) > 1e4 || std::isnan(brdf.y) || std::isinf(brdf.y) || rand() % 1000000 == 0) {
-    //     std::cerr << "WTF " << brdf.x << ' ' << brdf.y << ' ' << brdf.z << ' ' << pdf << ' ' << d.dot(shadingNorma) << std::endl;
+    // if (brdf.x / pdf * fabs(d.dot(shadingNorma)) > 1e5 || std::isnan(1.0 / pdf * fabs(d.dot(shadingNorma))) || std::isinf(brdf.y) || std::isnan(brdf.y)) {
+    //     std::cerr << "WTF " << brdf.y << ' ' << figurePtr->materialIndex << ' ' << ray.d.dot(shadingNorma) << ' ' << ' ' << pdf << ' ' << d.dot(shadingNorma) << std::endl;
     // }
+
+    if (pdf < 1e-6) {
+        std::cerr << "WTF " << pdf << std::endl;
+    }
     return figurePtr->material.emission + 1.0 / pdf * fabs(d.dot(shadingNorma)) * getColor(u01, n01, rng, dRay, recLimit - 1) * brdf;
 }
 

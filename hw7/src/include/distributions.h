@@ -190,6 +190,9 @@ private:
 
         // Section 3.4: transforming the normal back to the ellipsoid configuration
         Vec3 ne = Vec3(alpha_ * nh.x, alpha_ * nh.y, std::max<float>(0.0, nh.z)).normalize();
+        if (alpha_ < 3e-3 && ne.z < 0.8) {
+            std::cerr << "FUCK" << std::endl;
+        }
         return 2 * ne.dot(v) * ne - v;
     }
 
@@ -204,7 +207,7 @@ private:
 
     float pdf_(Vec3 d, Vec3 v, float alpha_) const {
         Vec3 ni = (v + d).normalize();
-        float dv = G1(ni, alpha_) * std::max(0.f, v.dot(ni)) * D(ni, alpha_) / fabs(v.z);
+        float dv = G1(v, alpha_) * std::max(0.f, v.dot(ni)) * D(ni, alpha_) / fabs(v.z);
         float res = dv / (4 * v.dot(ni));
         if (std::isnan(v.z)) {
             std::cerr << "After: " << v.x << ' ' << v.y << ' ' << v.z << std::endl;
@@ -223,10 +226,7 @@ private:
         Vec3 a = n.cross(newN);
         float w = sqrt(n.len2()) + n.dot(newN);
         float len = sqrt(a.len2() + w * w);
-        if (std::isnan(w / len)) {
-            // std::cerr << n.x << ' ' << n.y << ' ' << n.z << ' ' << a.x << ' ' <<std::endl;
-        }
-        return Quaternion{1 / len * a, w / len};
+        return Quaternion{1. / len * a, w / len};
     }
 
 public:
@@ -236,7 +236,12 @@ public:
         (void) x;
         v = -1. * v;
         auto q = getQ(n);
-        Vec3 res = q.conjugate().transform(sample_(u01, rng, q.transform(v).normalize(), alpha_)).normalize();
+        auto vTransformed = q.transform(v);
+        auto dTransformed = sample_(u01, rng, vTransformed, alpha_);
+        if (pdf_(dTransformed, vTransformed, alpha_) < 1e-6) {
+            pdf_(dTransformed, vTransformed, alpha_);
+        }
+        Vec3 res = q.conjugate().transform(dTransformed);
         return res;
     }
 
@@ -244,12 +249,9 @@ public:
         (void) x;
         v = -1. * v;
         auto q = getQ(n);
-        if (std::isnan(v.z) || std::isnan(v.y) || std::isnan(v.x) || std::isnan(q.w)) {
-            std::cerr << "Before:" << v.x << ' ' << v.y << ' ' << v.z << ' ' << q.w << std::endl;
-        }
         float res = pdf_(q.transform(d), q.transform(v), alpha_);
         if (std::isnan(res) || std::isinf(res)) {
-            // std::cerr << "LOSHARA" << ' ' << std::isnan(res) << ' ' << std::isinf(res) << std::endl;
+            std::cerr << "LOSHARA" << ' ' << std::isnan(res) << ' ' << std::isinf(res) << std::endl;
         }
         return res;
     }
