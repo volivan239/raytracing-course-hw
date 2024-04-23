@@ -9,7 +9,7 @@ void Scene::initDistribution() {
     auto lightDistribution = FiguresMix(figures);
     std::vector<std::variant<Cosine, Vndf, FiguresMix>> finalDistributions;
     finalDistributions.push_back(Cosine());
-    finalDistributions.push_back(Vndf());
+    // finalDistributions.push_back(Vndf());
     if (!lightDistribution.isEmpty()) {
         finalDistributions.push_back(lightDistribution);
     }
@@ -35,29 +35,30 @@ Color Scene::getColor(std::uniform_real_distribution<float> &u01, std::normal_di
     }
 
     auto [intersection, figurePos] = intersection_.value();
-    auto [t, _, shadingNorma_, is_inside] = intersection;
+    auto [t, geomNorma, shadingNorma_, is_inside] = intersection;
     auto shadingNorma = shadingNorma_.value();
     auto figurePtr = figures.begin() + figurePos;
     auto x = ray.o + t * ray.d;
     float alpha = pow(figurePtr->material.roughnessFactor, 2.0);
 
-    Vec3 d = distribution.sample(u01, n01, rng, x + eps * shadingNorma, shadingNorma, ray.d, alpha);
-    Ray dRay = Ray(x + eps * shadingNorma, d);
-    Vec3 brdf = materialModels[figurePtr->materialIndex].brdf(-1.0 * ray.d, dRay.d, shadingNorma);
+    Vec3 d = distribution.sample(u01, n01, rng, x + eps * geomNorma, shadingNorma, ray.d, alpha);
+    Ray dRay = Ray(x + eps * geomNorma, d);
+    Vec3 brdf = materialModels[figurePtr->materialIndex].brdf(dRay.d, -1. * ray.d, shadingNorma);
     if ((brdf.x < eps && brdf.y < eps && brdf.z < eps)) {
         return figurePtr->material.emission;
     }
 
-    float pdf = distribution.pdf(x + eps * shadingNorma, shadingNorma, d, ray.d, alpha);
+    float pdf = distribution.pdf(x + eps * geomNorma, shadingNorma, d, ray.d, alpha);
 
 
     // if (brdf.x / pdf * fabs(d.dot(shadingNorma)) > 1e5 || std::isnan(1.0 / pdf * fabs(d.dot(shadingNorma))) || std::isinf(brdf.y) || std::isnan(brdf.y)) {
     //     std::cerr << "WTF " << brdf.y << ' ' << figurePtr->materialIndex << ' ' << ray.d.dot(shadingNorma) << ' ' << ' ' << pdf << ' ' << d.dot(shadingNorma) << std::endl;
     // }
 
-    if (pdf < 1e-6) {
-        std::cerr << "WTF " << pdf << std::endl;
-    }
+    // if (pdf < 1e-3) {
+    //     return figurePtr->material.emission;
+    // }
+    // std::cerr << shadingNorma.x << std::endl;
     return figurePtr->material.emission + 1.0 / pdf * fabs(d.dot(shadingNorma)) * getColor(u01, n01, rng, dRay, recLimit - 1) * brdf;
 }
 

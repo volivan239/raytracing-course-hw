@@ -58,9 +58,9 @@ private:
     };
 
     void halfSplit(std::vector<Figure> &figures, uint32_t first, uint32_t last, Axis axis) const {
-        auto cmp = axis == Axis::X ? [](const Figure &lhs, const Figure &rhs) { return lhs.position.x < rhs.position.x; } : 
-                  (axis == Axis::Y ? [](const Figure &lhs, const Figure &rhs) { return lhs.position.y < rhs.position.y; } : 
-                                     [](const Figure &lhs, const Figure &rhs) { return lhs.position.z < rhs.position.z; });
+        auto cmp = axis == Axis::X ? [](const Figure &lhs, const Figure &rhs) { return lhs.data3.coords.x < rhs.data3.coords.x; } : 
+                  (axis == Axis::Y ? [](const Figure &lhs, const Figure &rhs) { return lhs.data3.coords.y < rhs.data3.coords.y; } : 
+                                     [](const Figure &lhs, const Figure &rhs) { return lhs.data3.coords.z < rhs.data3.coords.z; });
         std::sort(figures.begin() + first, figures.begin() + last, cmp);
     }
 

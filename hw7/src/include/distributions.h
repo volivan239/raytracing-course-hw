@@ -89,7 +89,7 @@ public:
             u = 1 - u;
             v = 1 - v;
         }
-        Vec3 point = figure.position + figure.rotation.conjugate().transform(a + u * b + v * c);
+        Vec3 point = a + u * b + v * c;
         return (point - x).normalize();
     }
 };
@@ -137,7 +137,7 @@ private:
         if (!firstIntersection.has_value()) {
             return 0.;
         }
-        auto [t, yn, _, __] = firstIntersection.value();
+        auto [t, yn, _, __] = firstIntersection.value(); // TODO: think between shading and geom here
         if (std::isnan(t)) { // Shouldn't happen actually...
             return INFINITY;
         }

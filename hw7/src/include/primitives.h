@@ -41,8 +41,6 @@ private:
     std::optional<Intersection> intersectAsTriangle(const Ray &ray) const;
 
 public:
-    Vec3 position;
-    Quaternion rotation;
     size_t materialIndex;
     GltfMaterial material;
 

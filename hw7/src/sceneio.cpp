@@ -200,6 +200,7 @@ void loadFigures(size_t indicesIndex, const Transition &transition, size_t mater
         std::cerr << "Load figures accessor: " << accessor.type << std::endl;
     }
     auto materialValue = scene.materials[material];
+    auto normalTransition = transition.inverted().transposed();
     for (size_t i = 0; i < accessor.count; i += 3) {
         size_t pos1, pos2, pos3;
         if (accessor.componentType == 5123) {
@@ -214,13 +215,12 @@ void loadFigures(size_t indicesIndex, const Transition &transition, size_t mater
             pos2 = *(reinterpret_cast<const uint32_t*>(buffer.data() + bufferView.byteOffset + 4 * (i + 1)));
             pos3 = *(reinterpret_cast<const uint32_t*>(buffer.data() + bufferView.byteOffset + 4 * (i + 2)));
         }
-        Vec3 shift = transition.apply({0, 0, 0});
         Vec3 p1 = transition.apply(positions[pos1]);
         Vec3 p2 = transition.apply(positions[pos2]);
         Vec3 p3 = transition.apply(positions[pos3]);
-        Vec3 n1 = (transition.apply(normals[pos1]) - shift).normalize();
-        Vec3 n2 = (transition.apply(normals[pos2]) - shift).normalize();
-        Vec3 n3 = (transition.apply(normals[pos3]) - shift).normalize();
+        Vec3 n1 = normalTransition.apply(normals[pos1]).normalize();
+        Vec3 n2 = normalTransition.apply(normals[pos2]).normalize();
+        Vec3 n3 = normalTransition.apply(normals[pos3]).normalize();
         Figure fig({p1, n1}, {p3, n3}, {p2, n2});
         fig.material = materialValue;
         fig.materialIndex = material;

@@ -12,17 +12,7 @@ Figure::Figure(Vertex data, Vertex data2, Vertex data3): data(data), data2(data2
 static const float T_MAX = 1e4;
 
 std::optional<Intersection> Figure::intersect(const Ray &ray) const {
-    Ray transformed = (ray - position).rotate(rotation);
-
-    std::optional<Intersection> result = intersectAsTriangle(transformed);
-
-    if (!result.has_value()) {
-        return {};
-    }
-    auto [t, geomNorma, shadingNorma, is_inside] = result.value();
-    geomNorma = rotation.conjugate().transform(geomNorma).normalize();
-    shadingNorma = rotation.conjugate().transform(shadingNorma.value()).normalize();
-    return {Intersection {t, geomNorma, shadingNorma, is_inside}};
+    return intersectAsTriangle(ray);
 }
 
 std::optional<Intersection> intersectPlaneAndRay(const Vec3 &n, const Ray &ray) {
@@ -113,7 +103,7 @@ std::optional<Intersection> Figure::intersectAsTriangle(const Ray &ray) const {
     auto c2 = magic2[0] * p.x + magic2[1] * p.y + magic2[2] * p.z;
     auto [u, v] = solveLinearSystem(a1, b1, c1, a2, b2, c2);
 
-    if (u < 0 || v < 0 || u > 1 || v > 1 || u + v > 1) {
+    if (u < 0 || v < 0 || u + v > 1) {
         return {};
     }
 
@@ -123,9 +113,6 @@ std::optional<Intersection> Figure::intersectAsTriangle(const Ray &ray) const {
         shadingNorma = -1. * shadingNorma;
     }
     geomNorma = geomNorma.normalize();
-    if (std::isnan(shadingNorma.x)) {
-        std::cerr << 127 << std::endl;
-    }
     return {{t, geomNorma, shadingNorma, is_inside}};
 }
 
@@ -143,19 +130,6 @@ AABB::AABB(const Figure &fig) {
         std::max(fig.data3.coords.y, std::max(fig.data.coords.y, fig.data2.coords.y)),
         std::max(fig.data3.coords.z, std::max(fig.data.coords.z, fig.data2.coords.z))
     );
-
-    auto rotation = fig.rotation.conjugate();
-    AABB unbiased = *this;
-    min = max = rotation.transform(unbiased.min);
-    extend(rotation.transform(Vec3(unbiased.min.x, unbiased.min.y, unbiased.max.z)));
-    extend(rotation.transform(Vec3(unbiased.min.x, unbiased.max.y, unbiased.min.z)));
-    extend(rotation.transform(Vec3(unbiased.min.x, unbiased.max.y, unbiased.max.z)));
-    extend(rotation.transform(Vec3(unbiased.max.x, unbiased.min.y, unbiased.min.z)));
-    extend(rotation.transform(Vec3(unbiased.max.x, unbiased.min.y, unbiased.max.z)));
-    extend(rotation.transform(Vec3(unbiased.max.x, unbiased.max.y, unbiased.min.z)));
-    extend(rotation.transform(Vec3(unbiased.max.x, unbiased.max.y, unbiased.max.z)));
-    min = min + fig.position;
-    max = max + fig.position;
 }
 
 

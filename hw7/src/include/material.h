@@ -18,16 +18,16 @@ public:
         return alpha2 / (M_PI * pow(std::max(0.f, (alpha2 - 1) * dotHN * dotHN + 1), 2.0));
     }
 
-    float v1(const Vec3 &n, const Vec3 &x, const Vec3 &h) const {
-        if (h.dot(x) <= 0) {
-            return 0;
-        }
+    float v1(const Vec3 &n, const Vec3 &x) const {
         return 1. / (fabs(n.dot(x)) + sqrt(std::max(0.f, alpha2 + (1 - alpha2) * n.dot(x) * n.dot(x))));
     }
 
     float specularBrdf(const Vec3 &l, const Vec3 &v, const Vec3 &n) const {
         Vec3 h = (l + v).normalize();
-        return distributionTerm(h, n) * v1(n, l, h) * v1(n, v, h);
+        if (h.dot(l) < 1e-4 || h.dot(v) < 1e-4) {
+            return 0;
+        }
+        return distributionTerm(h, n) * v1(n, l) * v1(n, v);
     }
 
     Vec3 diffuseBrdf(const Color &color) const {
@@ -52,8 +52,8 @@ public:
         }
         if (metallic < 1) {
             Vec3 diffuse = diffuseBrdf(baseColor);
-            Vec3 fr = fresnelTerm({0.04, 0.04, 0.04}, {1, 1, 1}, v, h);
-            dieletricBrdf = diffuse * (Vec3{1, 1, 1} - fr) + specular * fr; // ???
+            Vec3 ft = fresnelTerm({0.04, 0.04, 0.04}, {1, 1, 1}, v, h);
+            dieletricBrdf = diffuse * (Vec3{1, 1, 1} - ft) + specular * ft;
         }
 
         return (1.0 - metallic) * dieletricBrdf + metallic * metalBrdf;
