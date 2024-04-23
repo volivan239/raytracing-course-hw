@@ -9,7 +9,7 @@ void Scene::initDistribution() {
     auto lightDistribution = FiguresMix(figures);
     std::vector<std::variant<Cosine, Vndf, FiguresMix>> finalDistributions;
     finalDistributions.push_back(Cosine());
-    // finalDistributions.push_back(Vndf());
+    finalDistributions.push_back(Vndf());
     if (!lightDistribution.isEmpty()) {
         finalDistributions.push_back(lightDistribution);
     }
