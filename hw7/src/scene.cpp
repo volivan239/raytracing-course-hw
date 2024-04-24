@@ -3,7 +3,7 @@
 #include <random>
 #include <algorithm>
 
-static const size_t DIRTY_DENOISE_HACK_BUBEN = 10;
+static const size_t DIRTY_DENOISE_HACK_BUBEN = 6;
 
 Scene::Scene() {}
 
