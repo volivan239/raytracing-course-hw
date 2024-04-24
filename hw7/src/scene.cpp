@@ -3,6 +3,8 @@
 #include <random>
 #include <algorithm>
 
+static const size_t DIRTY_DENOISE_HACK_BUBEN = 30;
+
 Scene::Scene() {}
 
 void Scene::initDistribution() {
@@ -49,17 +51,13 @@ Color Scene::getColor(std::uniform_real_distribution<float> &u01, std::normal_di
     }
 
     float pdf = distribution.pdf(x + eps * geomNorma, shadingNorma, d, ray.d, alpha);
+    auto mult = 1. / pdf * fabs(d.dot(shadingNorma)) * brdf;
 
-
-    // if (brdf.x / pdf * fabs(d.dot(shadingNorma)) > 1e5 || std::isnan(1.0 / pdf * fabs(d.dot(shadingNorma))) || std::isinf(brdf.y) || std::isnan(brdf.y)) {
-    //     std::cerr << "WTF " << brdf.y << ' ' << figurePtr->materialIndex << ' ' << ray.d.dot(shadingNorma) << ' ' << ' ' << pdf << ' ' << d.dot(shadingNorma) << std::endl;
-    // }
-
-    // if (pdf < 1e-3) {
-    //     return figurePtr->material.emission;
-    // }
-    // std::cerr << shadingNorma.x << std::endl;
-    return figurePtr->material.emission + 1.0 / pdf * fabs(d.dot(shadingNorma)) * getColor(u01, n01, rng, dRay, recLimit - 1) * brdf;
+    if (mult.x > DIRTY_DENOISE_HACK_BUBEN || mult.y > DIRTY_DENOISE_HACK_BUBEN || mult.z > DIRTY_DENOISE_HACK_BUBEN || std::isnan(mult.x) || std::isnan(mult.y) || std::isnan(mult.z)) {
+        // std::cerr << "WTF " << brdf.x << ' ' << figurePtr->materialIndex << ' ' << fabs(d.dot(shadingNorma)) << ' ' << ' ' << pdf << ' ' << d.dot(shadingNorma) << std::endl;
+        return figurePtr->material.emission;
+    }
+    return figurePtr->material.emission + mult * getColor(u01, n01, rng, dRay, recLimit - 1);
 }
 
 Color Scene::getPixel(rng_type &rng, int x, int y) {

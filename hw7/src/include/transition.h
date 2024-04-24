@@ -75,7 +75,8 @@ public:
 
 
     /**
-     * Shamelessly copy-pasted from GLU library by MESA distributed under SGI FREE SOFTWARE LICENSE B
+     * Shamelessly copy-pasted from
+     * https://gitlab.freedesktop.org/mesa/glu/-/blob/master/src/libutil/project.c
     */
     Transition inverted() const {
         float invMatrix[4][4];
