@@ -117,6 +117,8 @@ std::optional<Intersection> Figure::intersectAsTriangle(const Ray &ray) const {
     shadingNorma = shadingNorma.normalize();
     if (is_inside) {
         shadingNorma = -1. * shadingNorma;
+        // tangent.v = -1. * tangent.v;
+        // tangent.w = -1. * tangent.w;
     }
     geomNorma = geomNorma.normalize();
     return {{t, geomNorma, texcoords, shadingNorma, tangent, is_inside}};

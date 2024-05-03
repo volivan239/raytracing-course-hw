@@ -35,25 +35,20 @@ static Vec3 sampleTexture(float texcoordX, float texcoordY, const Texture &textu
 }
 
 static Vec3 applyNormalMaps(Vec3 shadingNorma, Vec4 tangent, Vec3 sample, bool isInside) {
-    if (isInside) {
-        shadingNorma = -1. * shadingNorma;
-    }
+    // if (isInside) {
+    //     shadingNorma = -1. * shadingNorma;
+    // }
     Vec3 localX = tangent.v;
     Vec3 localZ = shadingNorma;
     Vec3 localY = tangent.w * localX.cross(localZ);
     Vec3 localNorma = 2.f * sample - Vec3{1., 1., 1.};
     Vec3 norma = localNorma.x * localX + localNorma.y * localY + localNorma.z * localZ;
-    if (isInside) {
-        norma = -1. * norma;
-        shadingNorma = -1. * shadingNorma;
-    }
-    norma = norma.normalize();
-    // if (rand() % 3000000 == 0) {
-    //     std::cerr << localX.dot(localZ) << ' ' << localY.dot(localZ) << ' ' << localX.dot(localY) << std::endl;
-    //     std::cerr << localNorma.x << ' ' << localNorma.y << ' ' << localNorma.z << std::endl;
-    //     std::cerr << norma.dot(shadingNorma) << std::endl;
+    // if (isInside) {
+    //     norma = -1. * norma;
+    //     shadingNorma = -1. * shadingNorma;
     // }
-    return norma.normalize();
+    norma = norma.normalize();
+    return norma;
 }
 
 Scene::Scene() {}
@@ -139,23 +134,24 @@ Color Scene::getColor(std::uniform_real_distribution<float> &u01, std::normal_di
         );
     }
 
+    Vec3 sample{0.5, 0.5, 1};
     if (material.normalTexture.has_value()) {
-        Vec3 sample = sampleTexture(
+        sample = sampleTexture(
             texcoords.value().x,
             texcoords.value().y,
             textureImages[textureDescs[material.normalTexture.value()].source],
             false
         );
-        shadingNorma = applyNormalMaps(shadingNorma, tangent.value(), sample, isInside);
     }
+    shadingNorma = applyNormalMaps(shadingNorma, tangent.value(), sample, isInside);
 
-    float alpha = pow(std::max(0.05f, material.roughnessFactor * metallicRoughness.y), 2.0);
+    float alpha = pow(std::max(0.08f, material.roughnessFactor * metallicRoughness.y), 2.0);
     float metallic = metallicRoughness.z;
 
     Vec3 d = distribution.sample(u01, n01, rng, x + eps * geomNorma, shadingNorma, ray.d, alpha);
     Ray dRay = Ray(x + eps * geomNorma, d);
     Vec3 brdf = materialModel.brdf(dRay.d, -1. * ray.d, shadingNorma, color, metallic, alpha);
-    if ((brdf.x < eps && brdf.y < eps && brdf.z < eps)) {
+    if ((brdf.x < eps && brdf.y < eps && brdf.z < eps) || d.dot(shadingNorma) < 0) { // WHY?
         return emission;
     }
 

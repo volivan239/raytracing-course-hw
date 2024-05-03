@@ -137,12 +137,12 @@ private:
         if (!firstIntersection.has_value()) {
             return 0.;
         }
-        auto [t, yn, _, _2, _3, _4] = firstIntersection.value(); // TODO: think between shading and geom here
+        auto [t, yn, _, shn, _3, _4] = firstIntersection.value(); // TODO: think between shading and geom here
         if (std::isnan(t)) { // Shouldn't happen actually...
             return INFINITY;
         }
         Vec3 y = x + t * d;
-        return figureLight.pdfOne(x, d, y, yn);
+        return figureLight.pdfOne(x, d, y, shn.value());
     }
 
     float getTotalPdf(uint32_t pos, const Vec3 &x, const Vec3 &n, const Vec3 &d) const {
@@ -190,9 +190,6 @@ private:
 
         // Section 3.4: transforming the normal back to the ellipsoid configuration
         Vec3 ne = Vec3(alpha_ * nh.x, alpha_ * nh.y, std::max<float>(0.0, nh.z)).normalize();
-        // if (alpha_ < 3e-3 && ne.z < 0.8) {
-        //     std::cerr << "FUCK" << std::endl;
-        // }
         return 2 * ne.dot(v) * ne - v;
     }
 
@@ -209,9 +206,6 @@ private:
         Vec3 ni = (v + d).normalize();
         float dv = G1(v, alpha_) * std::max(0.f, v.dot(ni)) * D(ni, alpha_) / fabs(v.z);
         float res = dv / (4 * v.dot(ni));
-        // if (std::isnan(v.z)) {
-        //     std::cerr << "After: " << v.x << ' ' << v.y << ' ' << v.z << std::endl;
-        // }
         return res;
     }
 
@@ -247,9 +241,6 @@ public:
         v = -1. * v;
         auto q = getQ(n);
         float res = pdf_(q.transform(d), q.transform(v), alpha_);
-        // if (std::isnan(res) || std::isinf(res)) {
-        //     std::cerr << "LOSHARA" << ' ' << std::isnan(res) << ' ' << std::isinf(res) << std::endl;
-        // }
         return res;
     }
 };

@@ -41,6 +41,9 @@ public:
 
     Vec3 brdf(const Vec3 &l, const Vec3 &v, const Vec3 &n, const Color& color, float metallic, float alpha) const {
         Vec3 h = (l + v).normalize();
+        // if (v.dot(n) < 0 || l.dot(n) < 0) {
+        //     return {0, 0, 0};
+        // }
         float specular = specularBrdf(l, v, n, alpha * alpha);
 
         Vec3 metalBrdf, dieletricBrdf;
