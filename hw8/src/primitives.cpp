@@ -113,6 +113,7 @@ std::optional<Intersection> Figure::intersectAsTriangle(const Ray &ray) const {
         data3.texcoords.y + u * (data.texcoords.y - data3.texcoords.y) + v * (data2.texcoords.y - data3.texcoords.y)
     );
     Vec4 tangent = Vec4(data3.tangents.v + u * (data.tangents.v - data3.tangents.v) + v * (data2.tangents.v - data3.tangents.v), data.tangents.w);
+    tangent.v = tangent.v.normalize();
     shadingNorma = shadingNorma.normalize();
     if (is_inside) {
         shadingNorma = -1. * shadingNorma;

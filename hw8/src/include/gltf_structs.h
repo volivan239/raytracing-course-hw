@@ -43,6 +43,7 @@ struct GltfMaterial {
     std::optional<size_t> baseColorTexture;
     std::optional<size_t> emissiveTexture;
     std::optional<size_t> metallicRoughnessTexture;
+    std::optional<size_t> normalTexture;
 
     static constexpr const float ior = 1.5;
 };

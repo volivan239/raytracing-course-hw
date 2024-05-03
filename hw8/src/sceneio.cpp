@@ -228,6 +228,9 @@ void loadMaterials(const rapidjson::Document &gltfScene, Scene &scene) {
         if (material.HasMember("emissiveTexture")) {
             curMaterial.emissiveTexture = material["emissiveTexture"]["index"].GetUint();
         }
+        if (material.HasMember("normalTexture")) {
+            curMaterial.normalTexture = material["normalTexture"]["index"].GetUint();
+        }
         if (material.HasMember("extensions") && material["extensions"].HasMember("KHR_materials_emissive_strength")) {
             float emissionFactor = material["extensions"]["KHR_materials_emissive_strength"]["emissiveStrength"].GetFloat();
             curMaterial.emission = emissionFactor * curMaterial.emission;
@@ -278,9 +281,11 @@ void loadFigures(size_t indicesIndex, const Transition &transition, size_t mater
         Vec3 n2 = normalTransition.apply(normals[pos2]).normalize();
         Vec3 n3 = normalTransition.apply(normals[pos3]).normalize();
 
-        Vec4 tan1 = Vec4(normalTransition.apply(tangents[pos1].v).normalize(), tangents[pos1].w);
-        Vec4 tan2 = Vec4(normalTransition.apply(tangents[pos2].v).normalize(), tangents[pos2].w);
-        Vec4 tan3 = Vec4(normalTransition.apply(tangents[pos3].v).normalize(), tangents[pos3].w);
+        Vec3 shift = transition.apply({0, 0, 0});
+
+        Vec4 tan1 = Vec4((transition.apply(tangents[pos1].v) - shift).normalize(), tangents[pos1].w);
+        Vec4 tan2 = Vec4((transition.apply(tangents[pos2].v) - shift).normalize(), tangents[pos2].w);
+        Vec4 tan3 = Vec4((transition.apply(tangents[pos3].v) - shift).normalize(), tangents[pos3].w);
 
         Figure fig({p1, tc1, n1, tan1}, {p3, tc3, n3, tan3}, {p2, tc2, n2, tan2});
         fig.material = materialValue;
@@ -312,7 +317,6 @@ void loadCameraPosition(const rapidjson::Document &gltfScene, Scene &scene) {
 
     for (const auto &node : scene.nodes) {
         if (node.camera.has_value()) {
-            std::cerr << "Detected camera" << std::endl;
             scene.cameraFovY = gltfScene["cameras"].GetArray()[node.camera.value()]["perspective"]["yfov"].GetFloat();
             scene.cameraPos = node.totalTransition.apply({0, 0, 0});
             scene.cameraUp = node.totalTransition.apply(scene.cameraUp) - scene.cameraPos;
@@ -371,8 +375,7 @@ Scene loadScene(std::string_view gltfFilename) {
 Texture loadTexture(std::string_view file) {
     Texture result;
     int channels;
-    result.data = reinterpret_cast<uint8_t*>(stbi_load(file.data(), &result.width, &result.height, &channels, 0));
-    std::cerr << "Number of channels: " << channels << ' ' << result.width << ' ' << result.height << std::endl;
+    result.data = reinterpret_cast<uint8_t*>(stbi_load(file.data(), &result.width, &result.height, &channels, 3));
     return result;
 }
 
