@@ -151,7 +151,7 @@ Color Scene::getColor(std::uniform_real_distribution<float> &u01, std::normal_di
     Vec3 d = distribution.sample(u01, n01, rng, x + eps * geomNorma, shadingNorma, ray.d, alpha);
     Ray dRay = Ray(x + eps * geomNorma, d);
     Vec3 brdf = materialModel.brdf(dRay.d, -1. * ray.d, shadingNorma, color, metallic, alpha);
-    if ((brdf.x < eps && brdf.y < eps && brdf.z < eps) || d.dot(shadingNorma) < 0) { // WHY?
+    if ((brdf.x < eps && brdf.y < eps && brdf.z < eps)) {
         return emission;
     }
 
